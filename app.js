@@ -228,7 +228,7 @@ app.post('/reset-password', (req, res) => {
     });
   });
 });
-
+// ADD SITE
 app.post('/addsite', (req, res) => {
   const {
     AtmId,
@@ -271,8 +271,8 @@ app.post('/addsite', (req, res) => {
     PoliceContact,
     HospitalContact,
     FireBrigadeContact
-  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;  
-  
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+
   const values = [
     AtmId,
     BranchName,
@@ -299,10 +299,86 @@ app.post('/addsite', (req, res) => {
       console.error('Error inserting data into MySQL:', err);
       return res.status(500).json({ message: 'Error inserting data into the database.' });
     }
-    
+
     return res.json({ message: 'Item added successfully' });
   });
 });
+//INCIDENT
+
+app.post('/incident', (req, res) => {
+  const {
+    Incidentno,
+    Client,
+    SubClient,
+    AtmId,
+    SiteName,
+    IncidentName,
+    OpenTime
+
+  } = req.body;
+
+  // Insert form data into the MySQL database
+  const sql = `INSERT INTO SiteDetail(
+    Incidentno,
+Client,
+SubClient,
+AtmId,
+SiteName,
+IncidentName,
+OpenTime
+  ) VALUES (?, ?, ?, ?, ?, ?, ?)`;
+
+  const values = [
+    Incidentno,
+    Client,
+    SubClient,
+    AtmId,
+    SiteName,
+    IncidentName,
+    OpenTime
+  ];
+
+  connection.query(sql, values, (err, results) => {
+    if (err) {
+      console.error('Error inserting data into MySQL:', err);
+      return res.status(500).json({ message: 'Error inserting data into the database.' });
+    }
+
+    return res.json({ message: 'Item added successfully' });
+  });
+});
+
+app.use(bodyParser.json());
+
+// Define the API endpoint for fetching specific incident
+app.post('/api/incidents', (req, res) => {
+  const { Incidentno } = req.body;
+
+  // Perform the MySQL query to fetch specific incident
+  const sql = `
+    SELECT *
+    FROM IncidentDetail
+    WHERE id = ?
+  `;
+  const values = [Incidentno];
+
+  connection.query(sql, values, (err, results) => {
+    if (err) {
+      console.error('Error fetching data:', err);
+      res.status(500).json({ error: 'Internal Server Error' });
+      return;
+    }
+
+    if (results.length === 0) {
+      res.status(404).json({ message: 'Incident not found' });
+      return;
+    }
+
+    console.log('Incident fetched successfully');
+    res.status(200).json({ incident: results[0] });
+  });
+});
+
 
 app.listen(3000, () => {
   console.log('Server is running on port 3000');

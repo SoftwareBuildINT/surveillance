@@ -1,30 +1,60 @@
-const mysql = require('mysql2');
 const express = require('express');
-
-const connection = mysql.createConnection({
-  host: 'localhost',
-  user: 'root',
-  password: '12345',
-  database: 'cbm',
-});
+const mysql = require('mysql2');
+const bodyParser = require('body-parser');
 
 const app = express();
-app.use(express.json()); // Parse JSON body
+const port = 3000;
 
-app.post('/clientlist/datas', (req, res) => {
-  const { CL_ID } = req.body; // Assuming CL_ID is sent in the request body
+// Configure MySQL connection
+const connection = mysql.createPool({
+  host: '3.7.158.221',
+  user: 'admin_buildINT',
+  password: 'buildINT@2023$',
+  database: 'serveillance',
+});
 
-  connection.query('SELECT * FROM client_list WHERE CL_ID = ? ORDER BY CL_ID DESC', [CL_ID], (err, rows) => {
+// Connect to MySQL
+connection.getConnection(err => {
+  if (err) {
+    console.error('Error connecting to MySQL:', err);
+    return;
+  }
+  console.log('Connected to MySQL');
+});
+
+// Middleware to parse JSON in the request body
+app.use(bodyParser.json());
+
+// Define the API endpoint for fetching specific incident
+app.post('/api/incidents', (req, res) => {
+  const { Incidentno } = req.body;
+
+  // Perform the MySQL query to fetch specific incident
+  const sql = `
+    SELECT *
+    FROM IncidentDetail
+    WHERE id = ?
+  `;
+  const values = [Incidentno];
+
+  connection.query(sql, values, (err, results) => {
     if (err) {
-      console.error('Error executing query:', err);
+      console.error('Error fetching data:', err);
       res.status(500).json({ error: 'Internal Server Error' });
       return;
     }
-    res.json(rows);
+
+    if (results.length === 0) {
+      res.status(404).json({ message: 'Incident not found' });
+      return;
+    }
+
+    console.log('Incident fetched successfully');
+    res.status(200).json({ incident: results[0] });
   });
 });
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+// Start the Express server
+app.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
 });
