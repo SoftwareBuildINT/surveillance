@@ -2,12 +2,13 @@ const express = require('express');
 const mysql = require('mysql2');
 const randomstring = require('randomstring');
 const nodemailer = require('nodemailer');
+const bodyParser = require('body-parser');
 const jwt = require('jsonwebtoken');
 const app = express();
 const cors = require('cors');
 app.use(cors());
 app.use(express.static('public'));
-
+app.use(bodyParser.json());
 const corsOptions = {
   origin: '*',
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
@@ -348,7 +349,7 @@ OpenTime
   });
 });
 
-app.use(bodyParser.json());
+
 
 // Define the API endpoint for fetching specific incident
 app.post('/api/incidents', (req, res) => {
