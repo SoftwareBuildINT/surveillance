@@ -6,8 +6,7 @@ const bodyParser = require('body-parser');
 const jwt = require('jsonwebtoken');
 const app = express();
 const cors = require('cors');
-app.use(cors());
-app.use(cors(corsOptions));
+
 app.use(express.static('public'));
 app.use(bodyParser.json());
 const corsOptions = {
@@ -17,6 +16,8 @@ const corsOptions = {
   optionsSuccessStatus: 204,
   allowedHeaders: 'Content-Type,Authorization',
 };
+app.use(cors());
+app.use(cors(corsOptions));
 const connection = mysql.createPool({
   host: '3.7.158.221',
   user: 'admin_buildINT',
