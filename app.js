@@ -7,6 +7,7 @@ const jwt = require('jsonwebtoken');
 const app = express();
 const cors = require('cors');
 app.use(cors());
+app.use(cors(corsOptions));
 app.use(express.static('public'));
 app.use(bodyParser.json());
 const corsOptions = {
@@ -16,16 +17,12 @@ const corsOptions = {
   optionsSuccessStatus: 204,
   allowedHeaders: 'Content-Type,Authorization',
 };
-
-app.use(cors(corsOptions));
-
 const connection = mysql.createPool({
   host: '3.7.158.221',
   user: 'admin_buildINT',
   password: 'buildINT@2023$',
   database: 'serveillance',
 });
-
 app.use(express.json());
 // Connect to the MySQL database
 connection.getConnection((err) => {
@@ -49,7 +46,7 @@ const verifyToken = (req, res, next) => {
     }
 
     // Attach the decoded user information to the request object for later use
-    req.user = decoded;
+    req.user_data = decoded;
     next();
   });
 };
@@ -74,7 +71,7 @@ app.post('/login', (req, res) => {
     const user = results[0];
 
     // User is authenticated; generate a JWT token
-    const token = jwt.sign({ full_name: user.full_name, EmailId: user.EmailId, role_id: user.role }, 'secretkey', {
+    const token = jwt.sign({ full_name: user.full_name, EmailId: user.EmailId, role: user.role }, 'secretkey', {
       expiresIn: '1h', // Token expires in 1 hour
     });
     // Update the database with the JWT token
@@ -230,12 +227,18 @@ app.post('/reset-password', (req, res) => {
   });
 });
 // ADD SITE
-app.post('/addsite', (req, res) => {
+// ADD SITE
+// ADD SITE
+app.post('/addsite', verifyToken, (req, res) => {
+  // Check if the user has the required roles to perform this action
+  const allowedRoles = ['admin', 'super admin'];
+
+  if (!allowedRoles.includes(req.user_data.role)) {
+    return res.status(403).json({ error: 'Permission denied. Insufficient role.' });
+  }
+
   const {
-    AtmId,
-    BranchName,
-    Client,
-    SubClient,
+    AtmId, BranchName, Client, SubClient,
     City,
     State,
     PanelMake,
@@ -305,38 +308,25 @@ app.post('/addsite', (req, res) => {
   });
 });
 //INCIDENT
+app.post('/incident', verifyToken, (req, res) => {
+  // Check if the user has the required roles to perform this action
+  const allowedRoles = ['admin', 'super admin'];
 
-app.post('/incident', (req, res) => {
+  if (!allowedRoles.includes(req.user_data.role)) {
+    return res.status(403).json({ error: 'Permission denied. Insufficient role.' });
+  }
   const {
-    Incidentno,
-    Client,
-    SubClient,
-    AtmId,
-    SiteName,
-    IncidentName,
-    OpenTime
+    Incidentno,Client,SubClient,AtmId,SiteName,IncidentName,OpenTime
 
   } = req.body;
 
   // Insert form data into the MySQL database
   const sql = `INSERT INTO SiteDetail(
-    Incidentno,
-Client,
-SubClient,
-AtmId,
-SiteName,
-IncidentName,
-OpenTime
+    Incidentno,Client,SubClient,AtmId,SiteName,IncidentName,OpenTime
   ) VALUES (?, ?, ?, ?, ?, ?, ?)`;
 
   const values = [
-    Incidentno,
-    Client,
-    SubClient,
-    AtmId,
-    SiteName,
-    IncidentName,
-    OpenTime
+    Incidentno,Client,SubClient,AtmId,SiteName,IncidentName,OpenTime
   ];
 
   connection.query(sql, values, (err, results) => {
@@ -348,11 +338,14 @@ OpenTime
     return res.json({ message: 'Item added successfully' });
   });
 });
-
-
-
 // Define the API endpoint for fetching specific incident
-app.post('/api/incidents', (req, res) => {
+app.post('/api/incidentsite', verifyToken, (req, res) => {
+  // Check if the user has the required roles to perform this action
+  const allowedRoles = ['admin', 'super admin'];
+
+  if (!allowedRoles.includes(req.user_data.role)) {
+    return res.status(403).json({ error: 'Permission denied. Insufficient role.' });
+  }
   const { Incidentno } = req.body;
 
   // Perform the MySQL query to fetch specific incident
@@ -381,6 +374,7 @@ app.post('/api/incidents', (req, res) => {
 });
 
 
-app.listen(3000, () => {
-  console.log('Server is running on port 3000');
+
+app.listen(3328, () => {
+  console.log('Server is running on port 3328');
 });

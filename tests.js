@@ -5,7 +5,8 @@ const bodyParser = require('body-parser');
 const app = express();
 const port = 3000;
 
-// Configure MySQL connection
+app.use(bodyParser.json());
+
 const connection = mysql.createPool({
   host: '3.7.158.221',
   user: 'admin_buildINT',
@@ -13,48 +14,54 @@ const connection = mysql.createPool({
   database: 'serveillance',
 });
 
-// Connect to MySQL
-connection.getConnection(err => {
+connection.getConnection((err) => {
   if (err) {
-    console.error('Error connecting to MySQL:', err);
+    console.error('Database connection failed:', err.stack);
     return;
   }
-  console.log('Connected to MySQL');
+  console.log('Connected to the database');
 });
 
-// Middleware to parse JSON in the request body
-app.use(bodyParser.json());
+// Middleware to check if the user is a super admin
+const isSuperAdmin = (req, res, next) => {
+  if (req.body.role === 'super admin') {
+    return res.status(403).json({ error: 'Super admins cannot be created by other users.' });
+  }
+  next();
+};
 
-// Define the API endpoint for fetching specific incident
-app.post('/api/incidents', (req, res) => {
-  const { Incidentno } = req.body;
+const userExists = (req, res, next) => {
+  const existingUser = users.find(user => user.username === req.body.username);
+  if (existingUser) {
+    return res.status(400).json({ error: 'User already exists.' });
+  }
+  next();
+};
 
-  // Perform the MySQL query to fetch specific incident
-  const sql = `
-    SELECT *
-    FROM IncidentDetail
-    WHERE id = ?
-  `;
-  const values = [Incidentno];
+const isNotSuperAdmin = (req, res, next) => {
+  if (req.body.role === 'super admin') {
+    return res.status(403).json({ error: 'Regular admins cannot create super admins.' });
+  }
+  next();
+};
+// API endpoint to add a new user
+app.post('/api/adduser', (req, res) => {
+  const { username, password, role } = req.body;
 
-  connection.query(sql, values, (err, results) => {
+  // TODO: Implement role-based access control here
+
+  const sql = 'INSERT INTO login (username, password, role) VALUES (?, ?, ?)';
+  connection.query(sql, [username, password, role], (err, result) => {
     if (err) {
-      console.error('Error fetching data:', err);
-      res.status(500).json({ error: 'Internal Server Error' });
-      return;
+      console.error('Error adding user:', err);
+      res.status(500).send('Internal Server Error');
+    } else {
+      console.log('User added successfully');
+      res.status(200).send('User added successfully');
     }
-
-    if (results.length === 0) {
-      res.status(404).json({ message: 'Incident not found' });
-      return;
-    }
-
-    console.log('Incident fetched successfully');
-    res.status(200).json({ incident: results[0] });
   });
 });
 
-// Start the Express server
 app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
+  console.log(`Server is running on http://localhost:${port}`);
 });
