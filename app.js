@@ -249,11 +249,14 @@ app.post('/addsite', verifyToken, (req, res) => {
     Communication,
     Latitude,
     Longitude,
-    MseDetails,
     RouterIp,
     PoliceContact,
     HospitalContact,
-    FireBrigadeContact
+    FireBrigadeContact,
+    MseName,
+    MseEmail,
+    MseContact,
+    Region
   } = req.body;
 
   // Insert form data into the MySQL database
@@ -271,12 +274,15 @@ app.post('/addsite', verifyToken, (req, res) => {
     Communication,
     Latitude,
     Longitude,
-    MseDetails,
     RouterIp,
     PoliceContact,
     HospitalContact,
-    FireBrigadeContact
-  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+    FireBrigadeContact,
+    MseName,
+    MseEmail,
+    MseContact,
+    Region
+  ) VALUES (?, ?, ?, ?,?,?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
   const values = [
     AtmId,
@@ -292,11 +298,14 @@ app.post('/addsite', verifyToken, (req, res) => {
     Communication,
     Latitude,
     Longitude,
-    MseDetails,
     RouterIp,
     PoliceContact,
     HospitalContact,
-    FireBrigadeContact
+    FireBrigadeContact,
+    MseName,
+    MseEmail,
+    MseContact,
+    Region
   ];
 
   connection.query(sql, values, (err, results) => {
@@ -374,39 +383,7 @@ app.post('/api/incidentsite', verifyToken, (req, res) => {
   });
 });
 
-app.post('/api/city', verifyToken, (req, res) => {
-  // Check if the user has the required roles to perform this action
-  const allowedRoles = ['admin', 'super admin'];
 
-  if (!allowedRoles.includes(req.user_data.role)) {
-    return res.status(403).json({ error: 'Permission denied. Insufficient role.' });
-  }
-  const { CityId } = req.body;
-
-  // Perform the MySQL query to fetch specific incident
-  const sql = `
-    SELECT *
-    FROM City
-    WHERE CityId = ?
-  `;
-  const values = [CityId];
-
-  connection.query(sql, values, (err, results) => {
-    if (err) {
-      console.error('Error fetching data:', err);
-      res.status(500).json({ error: 'Internal Server Error' });
-      return;
-    }
-
-    if (results.length === 0) {
-      res.status(404).json({ message: 'CityId not found' });
-      return;
-    }
-
-    console.log('CityId fetched successfully');
-    res.status(200).json({ CityId: results[0] });
-  });
-});
 
 
 app.listen(3328, () => {
