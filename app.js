@@ -396,39 +396,72 @@ app.get('/site-list', (req, res) => {
   });
 });
 
-app.get('/api/city/:CityId', verifyToken, (req, res) => {
-  // Check if the user has the required roles to perform this action
-  const allowedRoles = ['admin', 'super admin'];
+app.get('/api/regions', (req, res) => {
+  const regionId = req.query.regionId;
 
-  if (!allowedRoles.includes(req.user_data.role)) {
-    return res.status(403).json({ error: 'Permission denied. Insufficient role.' });
+  // Use parameterized queries to prevent SQL injection
+  let sql = 'SELECT RegionId, RegionName FROM Region';
+  let values = [];
+
+  if (regionId) {
+    sql = 'SELECT RegionId, RegionName FROM Region WHERE RegionId = ?';
+    values = [regionId];
   }
-
-  // Extract CityId from the URL parameters
-  const { CityId } = req.params;
-
-  // Perform the MySQL query to fetch specific city by CityId
-  const sql = `
-    SELECT *
-    FROM City
-    WHERE CityId = ?
-  `;
-  const values = [CityId];
 
   connection.query(sql, values, (err, results) => {
     if (err) {
-      console.error('Error fetching data:', err);
+      console.error('Error executing MySQL query: ' + err.stack);
       res.status(500).json({ error: 'Internal Server Error' });
       return;
     }
 
-    if (results.length === 0) {
-      res.status(404).json({ message: 'CityId not found' });
+    res.json(results);
+  });
+});
+
+app.get('/api/states', (req, res) => {
+  const stateId = req.query.RegionId;
+
+  // Use parameterized queries to prevent SQL injection
+  let sql = 'SELECT StateId, StateName FROM State';
+  let values = [];
+
+  if (stateId) {
+    sql = 'SELECT StateId, StateName FROM State WHERE RegionId = ?';
+    values = [stateId]; // Change RegionId to stateId
+  }
+
+  connection.query(sql, values, (err, results) => {
+    if (err) {
+      console.error('Error executing MySQL query: ' + err.stack);
+      res.status(500).json({ error: 'Internal Server Error' });
       return;
     }
 
-    console.log('CityId fetched successfully');
-    res.status(200).json({ CityId: results[0] });
+    res.json(results);
+  });
+});
+
+app.get('/api/cities', (req, res) => {
+  const stateId = req.query.StateId;
+
+  // Use parameterized queries to prevent SQL injection
+  let sql = 'SELECT CityId, CityName FROM City';
+  let values = [];
+
+  if (stateId) {
+    sql = 'SELECT CityId, CityName FROM City WHERE StateId = ?';
+    values = [stateId];
+  }
+
+  connection.query(sql, values, (err, results) => {
+    if (err) {
+      console.error('Error executing MySQL query: ' + err.stack);
+      res.status(500).json({ error: 'Internal Server Error' });
+      return;
+    }
+
+    res.json(results);
   });
 });
 
