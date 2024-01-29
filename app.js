@@ -383,6 +383,19 @@ app.post('/api/incidentsite', verifyToken, (req, res) => {
   });
 });
 
+app.get('/site-list', (req, res) => {
+  connection.query(`
+  SELECT * FROM SiteDetail
+`, (error, results) => {
+    if (error) {
+      console.error('Error retrieving site details:', error);
+      res.status(500).json({ error: 'Internal server error' });
+      return;
+    }
+    res.json(results);
+  });
+});
+
 app.get('/api/city/:CityId', verifyToken, (req, res) => {
   // Check if the user has the required roles to perform this action
   const allowedRoles = ['admin', 'super admin'];
