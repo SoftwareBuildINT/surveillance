@@ -6,6 +6,7 @@ const bodyParser = require('body-parser');
 const jwt = require('jsonwebtoken');
 const app = express();
 const cors = require('cors');
+const bcrypt = require('bcrypt');
 
 app.use(express.static('public'));
 app.use(bodyParser.json());
@@ -52,32 +53,69 @@ const verifyToken = (req, res, next) => {
   });
 };
 
-// Request an OTP for login
-app.post('/login', (req, res) => {
+
+app.post('/addUser', async (req, res) => {
+  const { EmailId, password, token, expiration_time, otp, role, full_name } = req.body;
+
+  try {
+      // Hash the password
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      // Insert user data into the database
+      connection.query(`INSERT INTO login (EmailId, password, token, expiration_time, otp, role, full_name) VALUES (?, ?, ?, ?, ?, ?, ?)`, 
+          [EmailId, hashedPassword, token, expiration_time, otp, role, full_name], function(err, result) {
+          if (err) {
+              console.error(err.message);
+              res.status(500).json({ error: 'Failed to register user.' });
+          } else {
+              console.log(`User with email ${EmailId} registered successfully.`);
+              res.status(201).json({ message: 'User registered successfully.' });
+          }
+      });
+  } catch (err) {
+      console.error(err.message);
+      res.status(500).json({ error: 'Failed to register user.' });
+  }
+});
+
+app.post('/login', async (req, res) => {
   const { EmailId, password } = req.body;
 
-  // Check if the user exists
-  connection.query('SELECT * FROM login WHERE EmailId = ? AND password = ?', [EmailId, password], (err, results) => {
-    if (err) {
-      console.log(err)
+  try {
+      // Fetch user details from the database based on the provided email
+      connection.query('SELECT * FROM login WHERE EmailId = ?', [EmailId], async (err, results) => {
+          if (err) {
+              console.error('Database error:', err);
+              res.status(500).json({ error: 'Internal server error' });
+              return;
+          }
+
+          if (results.length === 0) {
+              res.status(401).json({ error: 'Invalid EmailId or password' });
+              return;
+          }
+
+          const user = results[0];
+
+          // Compare the provided password with the hashed password stored in the database
+          const passwordMatch = await bcrypt.compare(password, user.password);
+          if (!passwordMatch) {
+              res.status(401).json({ error: 'Invalid EmailId or password' });
+              return;
+          }
+
+          // User is authenticated; generate a JWT token
+          const token = jwt.sign({ full_name: user.full_name, EmailId: user.EmailId, role: user.role }, 'secretkey', {
+              expiresIn: '1h', // Token expires in 1 hour
+          });
+
+          // Respond with the JWT token
+          res.status(200).json({ token });
+      });
+  } catch (error) {
+      console.error('Error during login:', error);
       res.status(500).json({ error: 'Internal server error' });
-      return;
-    }
-
-    if (results.length === 0) {
-      res.status(401).json({ error: 'Invalid EmailId or password' });
-      return;
-    }
-
-    const user = results[0];
-
-    // User is authenticated; generate a JWT token
-    const token = jwt.sign({ full_name: user.full_name, EmailId: user.EmailId, role: user.role }, 'secretkey', {
-      expiresIn: '1h', // Token expires in 1 hour
-    });
-    // Update the database with the JWT token
-    res.status(200).json({ "token": token, });
-  });
+  }
 });
 // Verify OTP and log in
 app.post('/verify', (req, res) => {
@@ -198,37 +236,50 @@ app.post('/forgot', (req, res) => {
     );
   });
 });
-app.post('/reset-password', (req, res) => {
+app.post('/reset-password', async (req, res) => {
   const { EmailId, otp, newPassword, confirmNewPassword } = req.body;
 
   // Check if newPassword and confirmNewPassword match
   if (newPassword !== confirmNewPassword) {
-    res.status(400).json({ error: 'New passwords do not match' });
-    return;
+      res.status(400).json({ error: 'New passwords do not match' });
+      return;
   }
 
-  // Check if the reset token matches the stored token for the user
-  connection.query('SELECT * FROM login WHERE EmailId = ? AND otp = ?', [EmailId, otp], (err, results) => {
-    if (err) {
-      console.error('Database error:', err);
-      res.status(500).json({ error: 'Internal server error' });
-      return;
-    }
-    // Update the password for the user
-    connection.query('UPDATE login SET password = ? WHERE EmailId = ?', [newPassword, EmailId], (updateErr, updateResults) => {
-      if (updateErr) {
-        console.error('Update error:', updateErr);
-        res.status(500).json({ error: 'Failed to update password in the database' });
-        return;
-      }
+  try {
+      // Hash the new password
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-      // Password updated successfully
-      res.status(200).json({ message: 'Password updated successfully' });
-    });
-  });
+      // Check if the reset token matches the stored token for the user
+      connection.query('SELECT * FROM login WHERE EmailId = ? AND otp = ?', [EmailId, otp], async (err, results) => {
+          if (err) {
+              console.error('Database error:', err);
+              res.status(500).json({ error: 'Internal server error' });
+              return;
+          }
+
+          if (results.length === 0) {
+              res.status(404).json({ error: 'Invalid EmailId or OTP' });
+              return;
+          }
+
+          // Update the password for the user
+          connection.query('UPDATE login SET password = ? WHERE EmailId = ?', [hashedPassword, EmailId], (updateErr, updateResults) => {
+              if (updateErr) {
+                  console.error('Update error:', updateErr);
+                  res.status(500).json({ error: 'Failed to update password in the database' });
+                  return;
+              }
+
+              // Password updated successfully
+              res.status(200).json({ message: 'Password updated successfully' });
+          });
+      });
+  } catch (error) {
+      console.error('Error hashing password:', error);
+      res.status(500).json({ error: 'Internal server error' });
+  }
 });
-// ADD SITE
-// ADD SITE
+
 // ADD SITE
 app.post('/addsite', verifyToken, (req, res) => {
   // Check if the user has the required roles to perform this action
@@ -384,6 +435,7 @@ app.post('/api/incidentsite', verifyToken, (req, res) => {
 });
 
 app.get('/site-list', (req, res) => {
+
   connection.query(`
   SELECT * FROM SiteDetail
 `, (error, results) => {
@@ -396,7 +448,12 @@ app.get('/site-list', (req, res) => {
   });
 });
 
-app.get('/api/regions', (req, res) => {
+app.get('/api/regions',verifyToken, (req, res) => {
+  const allowedRoles = ['admin', 'super admin'];
+
+  if (!allowedRoles.includes(req.user_data.role)) {
+    return res.status(403).json({ error: 'Permission denied. Insufficient role.' });
+  }
   const regionId = req.query.regionId;
 
   // Use parameterized queries to prevent SQL injection
@@ -419,7 +476,12 @@ app.get('/api/regions', (req, res) => {
   });
 });
 
-app.get('/api/states', (req, res) => {
+app.get('/api/states', verifyToken, (req, res) => {
+  const allowedRoles = ['admin', 'super admin'];
+
+  if (!allowedRoles.includes(req.user_data.role)) {
+    return res.status(403).json({ error: 'Permission denied. Insufficient role.' });
+  }
   const stateId = req.query.RegionId;
 
   // Use parameterized queries to prevent SQL injection
@@ -430,6 +492,7 @@ app.get('/api/states', (req, res) => {
     sql = 'SELECT StateId, StateName FROM State WHERE RegionId = ?';
     values = [stateId]; // Change RegionId to stateId
   }
+  console.log(values)
 
   connection.query(sql, values, (err, results) => {
     if (err) {
@@ -442,7 +505,12 @@ app.get('/api/states', (req, res) => {
   });
 });
 
-app.get('/api/cities', (req, res) => {
+app.get('/api/cities',verifyToken, (req, res) => {
+  const allowedRoles = ['admin', 'super admin'];
+
+  if (!allowedRoles.includes(req.user_data.role)) {
+    return res.status(403).json({ error: 'Permission denied. Insufficient role.' });
+  }
   const stateId = req.query.StateId;
 
   // Use parameterized queries to prevent SQL injection
