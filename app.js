@@ -466,7 +466,6 @@ app.get('/api/cities', (req, res) => {
 });
 
 
-
 app.listen(3328, () => {
   console.log('Server is running on port 3328');
 });
