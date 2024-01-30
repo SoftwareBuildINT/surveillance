@@ -492,6 +492,42 @@ app.get('/total-location',verifyToken, (req, res) => {
   });
 });
 
+app.get('/total-panel',verifyToken, (req, res) => {
+  const allowedRoles = ['Admin', 'super admin'];
+
+  if (!allowedRoles.includes(req.user_data.role)) {
+    return res.status(403).json({ error: 'Permission denied. Insufficient role.' });
+  }
+  
+  connection.query("SELECT COUNT(PanelMake) as panelCount FROM  SiteDetail;", (error, results) => {
+    if (error) {
+      console.error('Error retrieving total number of Panel Count:', error);
+      res.status(500).json({ error: 'Internal server error' });
+      return;
+    }
+    const panelCount = results[0].panelCount;
+    res.json({ panelCount });
+  });
+});
+
+app.get('/total-router',verifyToken, (req, res) => {
+  const allowedRoles = ['Admin', 'super admin'];
+
+  if (!allowedRoles.includes(req.user_data.role)) {
+    return res.status(403).json({ error: 'Permission denied. Insufficient role.' });
+  }
+  
+  connection.query("SELECT COUNT(RouterIp) as routerCount FROM  SiteDetail;", (error, results) => {
+    if (error) {
+      console.error('Error retrieving total number of Router:', error);
+      res.status(500).json({ error: 'Internal server error' });
+      return;
+    }
+    const routerCount = results[0].routerCount;
+    res.json({ routerCount });
+  });
+});
+
 
 
 app.get('/user-list', (req, res) => {
