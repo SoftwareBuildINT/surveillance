@@ -55,18 +55,18 @@ const verifyToken = (req, res, next) => {
 
 
 app.post('/addUser', async (req, res) => {
-  const { EmailId, password, token, expiration_time, otp, role, full_name } = req.body;
+  const { FirstName,LastName,EmailId, password, token, expiration_time, otp, role, Organization,ContactNo } = req.body;
 
   try {
       // Hash the password
       const hashedPassword = await bcrypt.hash(password, 10);
 
       // Insert user data into the database
-      connection.query(`INSERT INTO login (EmailId, password, token, expiration_time, otp, role, full_name) VALUES (?, ?, ?, ?, ?, ?, ?)`, 
-          [EmailId, hashedPassword, token, expiration_time, otp, role, full_name], function(err, result) {
+      connection.query(`INSERT INTO login (FirstName,LastName,EmailId, password, token, expiration_time, otp, role, Organization,ContactNo) VALUES (?,?, ?, ?, ?, ?, ?, ?,?,?)`, 
+          [FirstName,LastName,EmailId, hashedPassword, token, expiration_time, otp, role,  Organization,ContactNo], function(err, result) {
           if (err) {
               console.error(err.message);
-              res.status(500).json({ error: 'Failed to register user.' });
+              res.status(500).json({ error: 'Failed to Add user.' });
           } else {
               console.log(`User with email ${EmailId} registered successfully.`);
               res.status(201).json({ message: 'User registered successfully.' });
