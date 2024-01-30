@@ -451,6 +451,24 @@ app.get('/site-list', (req, res) => {
   });
 });
 
+app.get('/total-location',verifyToken, (req, res) => {
+  const allowedRoles = ['Admin', 'super admin'];
+
+  if (!allowedRoles.includes(req.user_data.role)) {
+    return res.status(403).json({ error: 'Permission denied. Insufficient role.' });
+  }
+  
+  connection.query("SELECT COUNT(AtmID) as total_location FROM SiteDetail;", (error, results) => {
+    if (error) {
+      console.error('Error retrieving total number of Locations:', error);
+      res.status(500).json({ error: 'Internal server error' });
+      return;
+    }
+    const total_location = results[0].total_location;
+    res.json({ total_location });
+  });
+});
+
 app.get('/user-list', (req, res) => {
 
   connection.query(`
