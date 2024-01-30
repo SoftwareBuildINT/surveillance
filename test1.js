@@ -533,7 +533,7 @@ app.get('/api/cities',verifyToken, (req, res) => {
   });
 });
 
-
+// login
 app.listen(3328, () => {
   console.log('Server is running on port 3328');
 });
