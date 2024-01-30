@@ -369,6 +369,9 @@ app.post('/addsite', verifyToken, (req, res) => {
   });
 });
 //INCIDENT
+
+
+
 app.post('/incident', verifyToken, (req, res) => {
   // Check if the user has the required roles to perform this action
   const allowedRoles = ['admin', 'super admin'];
@@ -441,6 +444,20 @@ app.get('/site-list', (req, res) => {
 `, (error, results) => {
     if (error) {
       console.error('Error retrieving site details:', error);
+      res.status(500).json({ error: 'Internal server error' });
+      return;
+    }
+    res.json(results);
+  });
+});
+
+app.get('/user-list', (req, res) => {
+
+  connection.query(`
+  SELECT concat(FirstName,' ',LastName) as user_name,EmailId, ContactNo,role, created_at  FROM login;
+`, (error, results) => {
+    if (error) {
+      console.error('Error retrieving Users details:', error);
       res.status(500).json({ error: 'Internal server error' });
       return;
     }
