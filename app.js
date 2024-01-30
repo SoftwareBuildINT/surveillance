@@ -454,7 +454,7 @@ app.get('/site-list', (req, res) => {
 app.get('/user-list', (req, res) => {
 
   connection.query(`
-  SELECT concat(FirstName,' ',LastName) as user_name,EmailId, ContactNo,role, created_at  FROM login;
+  SELECT Id,concat(FirstName,' ',LastName) as user_name,FirstName,LastName,EmailId, ContactNo,role,Organization, created_at  FROM login;
 `, (error, results) => {
     if (error) {
       console.error('Error retrieving Users details:', error);
