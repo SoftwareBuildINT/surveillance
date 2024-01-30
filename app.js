@@ -143,7 +143,7 @@ app.post('/verify', (req, res) => {
         { EmailId: user.EmailId },
         'secretkey',
         {
-          expiresIn: '6h', // Token expires in 1 hour
+          expiresIn: '1h', // Token expires in 1 hour
         }
       );
 
@@ -236,6 +236,7 @@ app.post('/forgot', (req, res) => {
     );
   });
 });
+
 app.post('/reset-password', async (req, res) => {
   const { EmailId, otp, newPassword, confirmNewPassword } = req.body;
 
@@ -283,7 +284,7 @@ app.post('/reset-password', async (req, res) => {
 // ADD SITE
 app.post('/addsite', verifyToken, (req, res) => {
   // Check if the user has the required roles to perform this action
-  const allowedRoles = ['admin', 'super admin'];
+  const allowedRoles = ['Admin', 'super admin'];
 
   if (!allowedRoles.includes(req.user_data.role)) {
     return res.status(403).json({ error: 'Permission denied. Insufficient role.' });
@@ -374,7 +375,7 @@ app.post('/addsite', verifyToken, (req, res) => {
 
 app.post('/incident', verifyToken, (req, res) => {
   // Check if the user has the required roles to perform this action
-  const allowedRoles = ['admin', 'super admin'];
+  const allowedRoles = ['Admin', 'super admin'];
 
   if (!allowedRoles.includes(req.user_data.role)) {
     return res.status(403).json({ error: 'Permission denied. Insufficient role.' });
@@ -403,42 +404,64 @@ app.post('/incident', verifyToken, (req, res) => {
   });
 });
 // Define the API endpoint for fetching specific incident
-app.post('/api/incidentsite', verifyToken, (req, res) => {
-  // Check if the user has the required roles to perform this action
-  const allowedRoles = ['admin', 'super admin'];
+// app.post('/api/incidentsite', verifyToken, (req, res) => {
+//   // Check if the user has the required roles to perform this action
+//   const allowedRoles = ['admin', 'super admin'];
+
+//   if (!allowedRoles.includes(req.user_data.role)) {
+//     return res.status(403).json({ error: 'Permission denied. Insufficient role.' });
+//   }
+//   const { Incidentno } = req.body;
+
+//   // Perform the MySQL query to fetch specific incident
+//   const sql = `
+//     SELECT *
+//     FROM IncidentDetail
+//     WHERE id = ?
+//   `;
+//   const values = [Incidentno];
+
+//   connection.query(sql, values, (err, results) => {
+//     if (err) {
+//       console.error('Error fetching data:', err);
+//       res.status(500).json({ error: 'Internal Server Error' });
+//       return;
+//     }
+
+//     if (results.length === 0) {
+//       res.status(404).json({ message: 'Incident not found' });
+//       return;
+//     }
+
+//     console.log('Incident fetched successfully');
+//     res.status(200).json({ incident: results[0] });
+//   });
+// });
+app.get('/get-incident',verifyToken, (req, res) => {
+  const allowedRoles = ['Admin', 'super admin'];
 
   if (!allowedRoles.includes(req.user_data.role)) {
     return res.status(403).json({ error: 'Permission denied. Insufficient role.' });
   }
-  const { Incidentno } = req.body;
-
-  // Perform the MySQL query to fetch specific incident
-  const sql = `
-    SELECT *
-    FROM IncidentDetail
-    WHERE id = ?
-  `;
-  const values = [Incidentno];
-
-  connection.query(sql, values, (err, results) => {
-    if (err) {
-      console.error('Error fetching data:', err);
-      res.status(500).json({ error: 'Internal Server Error' });
+  connection.query(`
+  SELECT * FROM IncidentDetail
+`, (error, results) => {
+    if (error) {
+      console.error('Error retrieving site details:', error);
+      res.status(500).json({ error: 'Internal server error' });
       return;
     }
-
-    if (results.length === 0) {
-      res.status(404).json({ message: 'Incident not found' });
-      return;
-    }
-
-    console.log('Incident fetched successfully');
-    res.status(200).json({ incident: results[0] });
+    res.json(results);
   });
 });
 
-app.get('/site-list', (req, res) => {
 
+app.get('/site-list',verifyToken, (req, res) => {
+  const allowedRoles = ['Admin', 'super admin'];
+
+  if (!allowedRoles.includes(req.user_data.role)) {
+    return res.status(403).json({ error: 'Permission denied. Insufficient role.' });
+  }
   connection.query(`
   SELECT * FROM SiteDetail
 `, (error, results) => {
@@ -469,6 +492,8 @@ app.get('/total-location',verifyToken, (req, res) => {
   });
 });
 
+
+
 app.get('/user-list', (req, res) => {
 
   connection.query(`
@@ -484,7 +509,7 @@ app.get('/user-list', (req, res) => {
 });
 
 app.get('/api/regions',verifyToken, (req, res) => {
-  const allowedRoles = ['admin', 'super admin'];
+  const allowedRoles = ['Admin', 'super admin'];
 
   if (!allowedRoles.includes(req.user_data.role)) {
     return res.status(403).json({ error: 'Permission denied. Insufficient role.' });
@@ -512,7 +537,7 @@ app.get('/api/regions',verifyToken, (req, res) => {
 });
 
 app.get('/api/states', verifyToken, (req, res) => {
-  const allowedRoles = ['admin', 'super admin'];
+  const allowedRoles = ['Admin', 'super admin'];
 
   if (!allowedRoles.includes(req.user_data.role)) {
     return res.status(403).json({ error: 'Permission denied. Insufficient role.' });
@@ -541,7 +566,7 @@ app.get('/api/states', verifyToken, (req, res) => {
 });
 //addsyeekig
 app.get('/api/cities',verifyToken, (req, res) => {
-  const allowedRoles = ['admin', 'super admin'];
+  const allowedRoles = ['Admin', 'super admin'];
 
   if (!allowedRoles.includes(req.user_data.role)) {
     return res.status(403).json({ error: 'Permission denied. Insufficient role.' });
