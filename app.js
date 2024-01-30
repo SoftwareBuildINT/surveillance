@@ -504,7 +504,7 @@ app.get('/api/states', verifyToken, (req, res) => {
     res.json(results);
   });
 });
-//add
+//addsyeekig
 app.get('/api/cities',verifyToken, (req, res) => {
   const allowedRoles = ['admin', 'super admin'];
 
