@@ -1,67 +1,49 @@
 const express = require('express');
-const mysql = require('mysql2');
-const bodyParser = require('body-parser');
+const mysql = require('mysql2/promise');
 
 const app = express();
 const port = 3000;
 
-app.use(bodyParser.json());
-
-const connection = mysql.createPool({
+const pool  = mysql.createPool({
   host: '3.7.158.221',
   user: 'admin_buildINT',
   password: 'buildINT@2023$',
   database: 'serveillance',
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
 });
 
-connection.getConnection((err) => {
-  if (err) {
-    console.error('Database connection failed:', err.stack);
-    return;
-  }
-  console.log('Connected to the database');
-});
 
-// Middleware to check if the user is a super admin
-const isSuperAdmin = (req, res, next) => {
-  if (req.body.role === 'super admin') {
-    return res.status(403).json({ error: 'Super admins cannot be created by other users.' });
-  }
-  next();
-};
+app.get('/check_status/:Atmid', async (req, res) => {
+  const AtmId = req.params.Atmid;
 
-const userExists = (req, res, next) => {
-  const existingUser = users.find(user => user.username === req.body.username);
-  if (existingUser) {
-    return res.status(400).json({ error: 'User already exists.' });
-  }
-  next();
-};
+  try {
+    const connection = await pool.getConnection();
+    const [result] = await connection.query('SELECT * FROM LatestData WHERE AtmId = ?', [AtmId]);
+    connection.release();
 
-const isNotSuperAdmin = (req, res, next) => {
-  if (req.body.role === 'super admin') {
-    return res.status(403).json({ error: 'Regular admins cannot create super admins.' });
-  }
-  next();
-};
-// API endpoint to add a new user
-app.post('/api/adduser', (req, res) => {
-  const { username, password, role } = req.body;
+    if (result.length > 0) {
+      const panelEvtDt = result[0].PanelEvtDt;
+      const currentTime = new Date();
 
-  // TODO: Implement role-based access control here
+      // Check if the time difference is greater than 15 minutes
+      const timeDifference = currentTime - panelEvtDt;
+      const fifteenMinutesInMillis = 15 * 60 * 1000;
 
-  const sql = 'INSERT INTO login (username, password, role) VALUES (?, ?, ?)';
-  connection.query(sql, [username, password, role], (err, result) => {
-    if (err) {
-      console.error('Error adding user:', err);
-      res.status(500).send('Internal Server Error');
+      if (timeDifference > fifteenMinutesInMillis) {
+        res.json({ status: 'offline' });
+      } else {
+        res.json({ status: 'online' });
+      }
     } else {
-      console.log('User added successfully');
-      res.status(200).send('User added successfully');
+      res.status(404).json({ error: 'Data not found' });
     }
-  });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
-
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
 });
