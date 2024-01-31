@@ -457,12 +457,8 @@ app.get('/get-incident',verifyToken, (req, res) => {
 });
 
 
-app.get('/site-list',verifyToken, (req, res) => {
-  const allowedRoles = ['Admin', 'super admin','User'];
+app.get('/site-list', (req, res) => {
 
-  if (!allowedRoles.includes(req.user_data.role)) {
-    return res.status(403).json({ error: 'Permission denied. Insufficient role.' });
-  }
   connection.query(`
   SELECT * FROM SiteDetail
 `, (error, results) => {
