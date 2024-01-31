@@ -285,7 +285,7 @@ app.post('/reset-password', async (req, res) => {
 // ADD SITE
 app.post('/addsite', verifyToken, (req, res) => {
   // Check if the user has the required roles to perform this action
-  const allowedRoles = ['Admin', 'super admin'];
+  const allowedRoles = ['Admin', 'super admin','User'];
 
   if (!allowedRoles.includes(req.user_data.role)) {
     return res.status(403).json({ error: 'Permission denied. Insufficient role.' });
@@ -376,7 +376,7 @@ app.post('/addsite', verifyToken, (req, res) => {
 
 app.post('/incident', verifyToken, (req, res) => {
   // Check if the user has the required roles to perform this action
-  const allowedRoles = ['Admin', 'super admin'];
+  const allowedRoles = ['Admin', 'super admin','User'];
 
   if (!allowedRoles.includes(req.user_data.role)) {
     return res.status(403).json({ error: 'Permission denied. Insufficient role.' });
@@ -439,7 +439,7 @@ app.post('/incident', verifyToken, (req, res) => {
 //   });
 // });
 app.get('/get-incident',verifyToken, (req, res) => {
-  const allowedRoles = ['Admin', 'super admin'];
+  const allowedRoles = ['Admin', 'super admin','User'];
 
   if (!allowedRoles.includes(req.user_data.role)) {
     return res.status(403).json({ error: 'Permission denied. Insufficient role.' });
@@ -458,7 +458,7 @@ app.get('/get-incident',verifyToken, (req, res) => {
 
 
 app.get('/site-list',verifyToken, (req, res) => {
-  const allowedRoles = ['Admin', 'super admin'];
+  const allowedRoles = ['Admin', 'super admin','User'];
 
   if (!allowedRoles.includes(req.user_data.role)) {
     return res.status(403).json({ error: 'Permission denied. Insufficient role.' });
@@ -476,7 +476,7 @@ app.get('/site-list',verifyToken, (req, res) => {
 });
 
 app.get('/total-location',verifyToken, (req, res) => {
-  const allowedRoles = ['Admin', 'super admin'];
+  const allowedRoles = ['Admin', 'super admin','User'];
 
   if (!allowedRoles.includes(req.user_data.role)) {
     return res.status(403).json({ error: 'Permission denied. Insufficient role.' });
@@ -494,7 +494,7 @@ app.get('/total-location',verifyToken, (req, res) => {
 });
 
 app.get('/total-panel',verifyToken, (req, res) => {
-  const allowedRoles = ['Admin', 'super admin'];
+  const allowedRoles = ['Admin', 'super admin','User'];
 
   if (!allowedRoles.includes(req.user_data.role)) {
     return res.status(403).json({ error: 'Permission denied. Insufficient role.' });
@@ -512,7 +512,7 @@ app.get('/total-panel',verifyToken, (req, res) => {
 });
 
 app.get('/total-router',verifyToken, (req, res) => {
-  const allowedRoles = ['Admin', 'super admin'];
+  const allowedRoles = ['Admin', 'super admin','User'];
 
   if (!allowedRoles.includes(req.user_data.role)) {
     return res.status(403).json({ error: 'Permission denied. Insufficient role.' });
@@ -546,7 +546,7 @@ app.get('/user-list', (req, res) => {
 });
 
 app.get('/api/regions',verifyToken, (req, res) => {
-  const allowedRoles = ['Admin', 'super admin'];
+  const allowedRoles = ['Admin', 'super admin','User'];
 
   if (!allowedRoles.includes(req.user_data.role)) {
     return res.status(403).json({ error: 'Permission denied. Insufficient role.' });
@@ -574,7 +574,7 @@ app.get('/api/regions',verifyToken, (req, res) => {
 });
 
 app.get('/api/states', verifyToken, (req, res) => {
-  const allowedRoles = ['Admin', 'super admin'];
+  const allowedRoles = ['Admin', 'super admin','User'];
 
   if (!allowedRoles.includes(req.user_data.role)) {
     return res.status(403).json({ error: 'Permission denied. Insufficient role.' });
@@ -603,7 +603,7 @@ app.get('/api/states', verifyToken, (req, res) => {
 });
 //addsyeekig
 app.get('/api/cities',verifyToken, (req, res) => {
-  const allowedRoles = ['Admin', 'super admin'];
+  const allowedRoles = ['Admin', 'super admin','User'];
 
   if (!allowedRoles.includes(req.user_data.role)) {
     return res.status(403).json({ error: 'Permission denied. Insufficient role.' });
