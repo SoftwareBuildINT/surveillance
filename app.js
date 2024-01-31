@@ -49,9 +49,78 @@ const verifyToken = (req, res, next) => {
 
     // Attach the decoded user information to the request object for later use
     req.user_data = decoded;
+    console.log(req.user_data)
     next();
   });
 };
+
+
+app.get('/profile', verifyToken, (req, res) => {
+  // Check if the user has the required roles to perform this action
+  const allowedRoles = ['Admin', 'super admin', 'User'];
+
+  if (!req.user_data || !req.user_data.role || !allowedRoles.includes(req.user_data.role)) {
+    return res.status(403).json({ error: 'Permission denied. Insufficient role.' });
+  }
+
+  // Continue with your existing logic to fetch profile from the database
+  const userId = req.user_data.Id;
+
+  console.log('User ID:', userId); // Log the user ID to check if it's correct
+
+  const query = `SELECT Id, CONCAT(FirstName, ' ', LastName) AS fullname, role FROM login WHERE Id = ?;`;
+
+  console.log('Query:', query); // Log the query string to check if it's correct
+
+  connection.query(query, [userId], (err, result) => {
+    if (err) {
+      console.error('Error fetching profile:', err);
+      res.status(500).json({ error: 'Error fetching profile' });
+    } else {
+      console.log('Result:', result); // Log the result to check what's being returned
+      if (result.length > 0) {
+        const profile = result[0];
+        res.json(profile);
+      } else {
+        res.status(404).json({ error: 'Profile not found' });
+      }
+    }
+  });
+});
+
+
+// side delete api
+app.delete('/delete-site', verifyToken, (req, res) => {
+  // Check if the user has the required roles to perform this action
+  const allowedRoles = ['Admin', 'super admin', 'User'];
+
+  if (!allowedRoles.includes(req.user_data.role)) {
+    return res.status(403).json({ error: 'Permission denied. Insufficient role.' });
+  }
+
+  const siteId = req.params.siteId; // Retrieve siteId from URL parameters
+  console.log(siteId)
+
+  // Define the SQL query to delete the site with the given ID
+  const sql = 'DELETE FROM SiteDetail WHERE SiteId = ?;'; // Use parameterized query
+
+  // Execute the SQL query with the specified site ID
+  connection.query(sql, [siteId], (err, results) => {
+    if (err) {
+      console.error('Error deleting site from MySQL:', err);
+      return res.status(500).json({ message: 'Error deleting site from the database.' });
+    }
+
+    // Check if any rows were affected (i.e., if the site was deleted)
+    if (results.affectedRows === 0) {
+      return res.status(404).json({ message: 'Site not found or already deleted.' });
+    }
+
+    // Respond with a success message
+    return res.json({ message: 'Site deleted successfully' });
+  });
+});
+
 
 
 app.post('/addUser', async (req, res) => {
@@ -105,7 +174,7 @@ app.post('/login', async (req, res) => {
           }
 
           // User is authenticated; generate a JWT token
-          const token = jwt.sign({ FirstName: user.FirstName, EmailId: user.EmailId, role: user.role }, 'secretkey', {
+          const token = jwt.sign({ FirstName: user.FirstName,LastName:user.LastName, EmailId: user.EmailId, role: user.role ,Id:user.Id}, 'secretkey', {
               expiresIn: '1h', // Token expires in 1 hour
           });
 
@@ -624,6 +693,16 @@ app.get('/api/cities',verifyToken, (req, res) => {
 
     res.json(results);
   });
+});
+
+
+// Logout route
+app.post('/logout', (req, res) => {
+  // Clear the JWT token from the client-side storage
+  res.clearCookie('token'); // Assuming the JWT token is stored in a cookie named 'jwtToken'
+
+  // Respond with a success message
+  res.status(200).json({ message: 'Logout successful' });
 });
 
 
