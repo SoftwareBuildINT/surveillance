@@ -657,25 +657,6 @@ app.get('/get-incident',verifyToken, (req, res) => {
 
 
 // Define your API endpoint
-<<<<<<< HEAD
-app.get('/site-list', async (req, res) => {
-  try {
-    if (req.query.SiteId) {
-      const querySiteById = 'SELECT * FROM serveillance.SiteDetail WHERE SiteId = ?;';
-      const [resultsSiteById] = await connection.promise().query(querySiteById, [req.query.SiteId]);
-      res.json({ sites: resultsSiteById });
-    } else {
-      const queryAllSites = 'SELECT * FROM serveillance.SiteDetail;';
-      const [resultsAllSites] = await connection.promise().query(queryAllSites);
-      res.json({ sites: resultsAllSites });
-    }
-  } catch (error) {
-    console.error('Error:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  } finally {
-    // Close the connection when done
-    await connection.end();
-=======
 app.get('/site-list', (req, res) => {
   // const allowedRoles = ['Admin', 'super admin','User'];
 
@@ -691,7 +672,6 @@ app.get('/site-list', (req, res) => {
   if (SiteId) {
     sql = 'SELECT * FROM SiteDetail WHERE SiteId = ?';
     values = [SiteId];
->>>>>>> 70a52c51cea6b0d7a5c2ee7694155d0e8170de0a
   }
 
   connection.query(sql, values, (err, results) => {
