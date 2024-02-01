@@ -1,5 +1,5 @@
 const express = require('express');
-const mysql = require('mysql2');
+// const mysql = require('mysql2');
 const randomstring = require('randomstring');
 const nodemailer = require('nodemailer');
 const bodyParser = require('body-parser');
@@ -7,7 +7,7 @@ const jwt = require('jsonwebtoken');
 const app = express();
 const cors = require('cors');
 const bcrypt = require('bcrypt');
-// const mysql = require('mysql2/promise');
+const mysql = require('mysql2/promise');
 
 
 app.use(express.static('public'));
@@ -90,42 +90,34 @@ app.get('/profile', verifyToken, (req, res) => {
   });
 });
 
-app.get('/checkStatus/:AtmId', (req, res) => {
+app.get('/checkStatus/:AtmId', async (req, res) => {
   const AtmId = req.params.AtmId;
 
-  // Query to check if there's a match between SiteDetail.AtmID and LatestData.AtmID
-  connection.query('SELECT * FROM SiteDetail WHERE AtmID = ?', [AtmId], (err, siteDetailResult) => {
-    if (err) {
-      console.error('Error querying SiteDetail:', err);
-      res.status(500).json({ error: 'Internal server error' });
-      return;
-    }
+  try {
+    // Query to check if there's a match between SiteDetail.AtmID and LatestData.AtmID
+    const [siteDetailResult] = await connection.query('SELECT * FROM SiteDetail WHERE AtmID = ?', [AtmId]);
+    const [latestDataResult] = await connection.query('SELECT * FROM LatestData WHERE AtmId = ?', [AtmId]);
 
-    connection.query('SELECT * FROM LatestData WHERE AtmId = ?', [AtmId], (err, latestDataResult) => {
-      if (err) {
-        console.error('Error querying LatestData:', err);
-        res.status(500).json({ error: 'Internal server error' });
-        return;
-      }
+    if (siteDetailResult.length > 0 && latestDataResult.length > 0) {
+      const panelEvtDt = latestDataResult[0].PanelEvtDt;
+      const currentTime = new Date();
 
-      if (siteDetailResult.length > 0 && latestDataResult.length > 0) {
-        const panelEvtDt = latestDataResult[0].PanelEvtDt;
-        const currentTime = new Date();
+      // Check if the time difference is greater than 15 minutes
+      const timeDifference = currentTime - panelEvtDt;
+      const fifteenMinutesInMillis = 15 * 60 * 1000;
 
-        // Check if the time difference is greater than 15 minutes
-        const timeDifference = currentTime - panelEvtDt;
-        const fifteenMinutesInMillis = 15 * 60 * 1000;
-
-        if (timeDifference > fifteenMinutesInMillis) {
-          res.json({ status: 'offline' });
-        } else {
-          res.json({ status: 'online' });
-        }
+      if (timeDifference > fifteenMinutesInMillis) {
+        res.json({ status: 'offline' });
       } else {
-        res.status(404).json({ error: 'Data not found' });
+        res.json({ status: 'online' });
       }
-    });
-  });
+    } else {
+      res.status(404).json({ error: 'Data not found' });
+    }
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 
