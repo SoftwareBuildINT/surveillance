@@ -1,5 +1,5 @@
 const express = require('express');
-// const mysql = require('mysql2');
+const mysql = require('mysql2');
 const randomstring = require('randomstring');
 const nodemailer = require('nodemailer');
 const bodyParser = require('body-parser');
@@ -7,7 +7,7 @@ const jwt = require('jsonwebtoken');
 const app = express();
 const cors = require('cors');
 const bcrypt = require('bcrypt');
-const mysql = require('mysql2/promise');
+// const mysql = require('mysql2/promise');
 
 
 app.use(express.static('public'));
@@ -89,35 +89,196 @@ app.get('/profile', verifyToken, (req, res) => {
     }
   });
 });
+app.get('/checkStatus', (req, res) => {
+  // Query to retrieve all ATM IDs and their status
+  connection.query('SELECT SiteDetail.AtmID, LatestData.PanelEvtDt FROM SiteDetail JOIN LatestData ON SiteDetail.AtmID = LatestData.AtmID', (err, results) => {
+    if (err) {
+      console.error('Error querying database:', err);
+      res.status(500).json({ error: 'Internal server error' });
+      return;
+    }
 
-app.get('/checkStatus/:AtmId', async (req, res) => {
-  const AtmId = req.params.AtmId;
-
-  try {
-    // Query to check if there's a match between SiteDetail.AtmID and LatestData.AtmID
-    const [siteDetailResult] = await connection.query('SELECT * FROM SiteDetail WHERE AtmID = ?', [AtmId]);
-    const [latestDataResult] = await connection.query('SELECT * FROM LatestData WHERE AtmId = ?', [AtmId]);
-
-    if (siteDetailResult.length > 0 && latestDataResult.length > 0) {
-      const panelEvtDt = latestDataResult[0].PanelEvtDt;
+    if (results.length > 0) {
       const currentTime = new Date();
-
-      // Check if the time difference is greater than 15 minutes
-      const timeDifference = currentTime - panelEvtDt;
       const fifteenMinutesInMillis = 15 * 60 * 1000;
 
-      if (timeDifference > fifteenMinutesInMillis) {
-        res.json({ status: 'offline' });
-      } else {
-        res.json({ status: 'online' });
-      }
+      const panelonlineCount = results.reduce((count, result) => {
+        const timeDifference = currentTime - result.PanelEvtDt;
+        const isOnline = timeDifference <= fifteenMinutesInMillis;
+        return count + (isOnline ? 1 : 0);
+      }, 0);
+
+      const panelofflineCount = results.length - panelonlineCount;
+
+      const atmStatusList = results.map(result => {
+        const timeDifference = currentTime - result.PanelEvtDt;
+        const isOnline = timeDifference <= fifteenMinutesInMillis;
+        return { AtmID: result.AtmID, status: isOnline ? 'online' : 'offline' };
+      });
+
+      const totalATMs = results.length;
+
+      res.json({ totalATMs, panelonlineCount, panelofflineCount });
     } else {
       res.status(404).json({ error: 'Data not found' });
     }
-  } catch (error) {
-    console.error('Error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+  });
+});
+
+app.post('/addsite', verifyToken, (req, res) => {
+  // Check if the user has the required roles to perform this action
+  const allowedRoles = ['Admin', 'super admin', 'User'];
+
+  if (!allowedRoles.includes(req.user_data.role)) {
+    return res.status(403).json({ error: 'Permission denied. Insufficient role.' });
   }
+
+  const {
+    AtmId, BranchName, Client, SubClient,
+    City,
+    State,
+    PanelMake,
+    PanelType,
+    PanelMacId,
+    DvrMake,
+    Communication,
+    Latitude,
+    Longitude,
+    RouterIp,
+    PoliceContact,
+    HospitalContact,
+    FireBrigadeContact,
+    MseName,
+    MseEmail,
+    MseContact,
+    Region
+  } = req.body;
+
+  // Check if the record with the given AtmId already exists
+  const checkIfExistsSQL = 'SELECT * FROM SiteDetail WHERE AtmId = ?';
+  connection.query(checkIfExistsSQL, [AtmId], (checkErr, checkResults) => {
+    if (checkErr) {
+      console.error('Error checking if record exists in MySQL:', checkErr);
+      return res.status(500).json({ message: 'Error checking if record exists in the database.' });
+    }
+
+    if (checkResults.length > 0) {
+      // If the record exists, update it
+      const updateSQL = `UPDATE SiteDetail SET
+        BranchName = ?,
+        Client = ?,
+        SubClient = ?,
+        City = ?,
+        State = ?,
+        PanelMake = ?,
+        PanelType = ?,
+        PanelMacId = ?,
+        DvrMake = ?,
+        Communication = ?,
+        Latitude = ?,
+        Longitude = ?,
+        RouterIp = ?,
+        PoliceContact = ?,
+        HospitalContact = ?,
+        FireBrigadeContact = ?,
+        MseName = ?,
+        MseEmail = ?,
+        MseContact = ?,
+        Region = ?
+        WHERE AtmId = ?`;
+
+      const updateValues = [
+        BranchName,
+        Client,
+        SubClient,
+        City,
+        State,
+        PanelMake,
+        PanelType,
+        PanelMacId,
+        DvrMake,
+        Communication,
+        Latitude,
+        Longitude,
+        RouterIp,
+        PoliceContact,
+        HospitalContact,
+        FireBrigadeContact,
+        MseName,
+        MseEmail,
+        MseContact,
+        Region,
+        AtmId
+      ];
+
+      connection.query(updateSQL, updateValues, (updateErr, updateResults) => {
+        if (updateErr) {
+          console.error('Error updating data in MySQL:', updateErr);
+          return res.status(500).json({ message: 'Error updating data in the database.' });
+        }
+
+        return res.json({ message: 'Item updated successfully' });
+      });
+    } else {
+      // If the record doesn't exist, insert a new one
+      const insertSQL = `INSERT INTO SiteDetail(
+        AtmId,
+        BranchName,
+        Client,
+        SubClient,
+        City,
+        State,
+        PanelMake,
+        PanelType,
+        PanelMacId,
+        DvrMake,
+        Communication,
+        Latitude,
+        Longitude,
+        RouterIp,
+        PoliceContact,
+        HospitalContact,
+        FireBrigadeContact,
+        MseName,
+        MseEmail,
+        MseContact,
+        Region
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+
+      const insertValues = [
+        AtmId,
+        BranchName,
+        Client,
+        SubClient,
+        City,
+        State,
+        PanelMake,
+        PanelType,
+        PanelMacId,
+        DvrMake,
+        Communication,
+        Latitude,
+        Longitude,
+        RouterIp,
+        PoliceContact,
+        HospitalContact,
+        FireBrigadeContact,
+        MseName,
+        MseEmail,
+        MseContact,
+        Region
+      ];
+
+      connection.query(insertSQL, insertValues, (insertErr, insertResults) => {
+        if (insertErr) {
+          console.error('Error inserting data into MySQL:', insertErr);
+          return res.status(500).json({ message: 'Error inserting data into the database.' });
+        }
+
+        return res.json({ message: 'Item added successfully' });
+      });
+    }
+  });
 });
 
 
