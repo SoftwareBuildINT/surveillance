@@ -125,6 +125,34 @@ app.get('/checkStatus', (req, res) => {
   });
 });
 
+//user
+app.delete('/delete-user/:Id', verifyToken, (req, res) => {
+  // Check if the user has the required roles to perform this action
+  const allowedRoles = ['Admin', 'super admin', 'User'];
+
+  if (!allowedRoles.includes(req.user_data.role)) {
+    return res.status(403).json({ error: 'Permission denied. Insufficient role.' });
+  }
+
+  const Id = req.params.Id; // Retrieve siteId from URL parameters
+  console.log(Id)
+
+  const sql = 'DELETE FROM login WHERE Id = ?;'; // Use parameterized query
+
+  connection.query(sql, [Id], (err, results) => {
+    if (err) {
+      console.error('Error deleting user from MySQL:', err);
+      return res.status(500).json({ message: 'Error deleting user from the database.' });
+    }
+
+    if (results.affectedRows === 0) {
+      return res.status(404).json({ message: 'User not found or already deleted.' });
+    }
+
+    // Respond with a success message
+    return res.json({ message: 'User deleted successfully' });
+  });
+});
 
 // side delete api
 app.delete('/delete-site/:siteId', verifyToken, (req, res) => {
