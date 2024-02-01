@@ -661,12 +661,12 @@ app.get('/get-incident',verifyToken, (req, res) => {
 
 
 // Define your API endpoint
-app.get('/site-list',verifyToken, (req, res) => {
-  const allowedRoles = ['Admin', 'super admin','User'];
+app.get('/site-list', (req, res) => {
+  // const allowedRoles = ['Admin', 'super admin','User'];
 
-  if (!allowedRoles.includes(req.user_data.role)) {
-    return res.status(403).json({ error: 'Permission denied. Insufficient role.' });
-  }
+  // if (!allowedRoles.includes(req.user_data.role)) {
+  //   return res.status(403).json({ error: 'Permission denied. Insufficient role.' });
+  // }
   const SiteId = req.query.SiteId;
 
   // Use parameterized queries to prevent SQL injection
