@@ -657,6 +657,7 @@ app.get('/get-incident',verifyToken, (req, res) => {
 
 
 // Define your API endpoint
+<<<<<<< HEAD
 app.get('/site-list', async (req, res) => {
   try {
     if (req.query.SiteId) {
@@ -674,7 +675,34 @@ app.get('/site-list', async (req, res) => {
   } finally {
     // Close the connection when done
     await connection.end();
+=======
+app.get('/site-list', (req, res) => {
+  // const allowedRoles = ['Admin', 'super admin','User'];
+
+  // if (!allowedRoles.includes(req.user_data.role)) {
+  //   return res.status(403).json({ error: 'Permission denied. Insufficient role.' });
+  // }
+  const SiteId = req.query.SiteId;
+
+  // Use parameterized queries to prevent SQL injection
+  let sql = 'SELECT * FROM SiteDetail;';
+  let values = [];
+
+  if (SiteId) {
+    sql = 'SELECT * FROM SiteDetail WHERE SiteId = ?';
+    values = [SiteId];
+>>>>>>> 70a52c51cea6b0d7a5c2ee7694155d0e8170de0a
   }
+
+  connection.query(sql, values, (err, results) => {
+    if (err) {
+      console.error('Error executing MySQL query: ' + err.stack);
+      res.status(500).json({ error: 'Internal Server Error' });
+      return;
+    }
+
+    res.json(results);
+  });
 });
 
 
