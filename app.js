@@ -91,37 +91,33 @@ app.get('/profile', verifyToken, (req, res) => {
 });
 app.get('/checkStatus', (req, res) => {
 
-  connection.query('SELECT SiteDetail.AtmID, LatestData.PanelEvtDt FROM SiteDetail JOIN LatestData ON SiteDetail.AtmID = LatestData.AtmID', (err, results) => {
+  connection.query('SELECT SiteDetail.AtmID, LatestData.PanelEvtDt FROM SiteDetail LEFT JOIN LatestData ON SiteDetail.AtmID = LatestData.AtmID', (err, results) => {
     if (err) {
       console.error('Error querying database:', err);
       res.status(500).json({ error: 'Internal server error' });
       return;
     }
 
-    if (results.length > 0) {
-      const currentTime = new Date();
-      const fifteenMinutesInMillis = 15 * 60 * 1000;
+    const currentTime = new Date();
+    const fifteenMinutesInMillis = 15 * 60 * 1000;
 
-      const panelonlineCount = results.reduce((count, result) => {
-        const timeDifference = currentTime - result.PanelEvtDt;
-        const isOnline = timeDifference <= fifteenMinutesInMillis;
-        return count + (isOnline ? 1 : 0);
-      }, 0);
+    const panelonlineCount = results.reduce((count, result) => {
+      const timeDifference = result.PanelEvtDt ? currentTime - result.PanelEvtDt : fifteenMinutesInMillis + 1;
+      const isOnline = timeDifference <= fifteenMinutesInMillis;
+      return count + (isOnline ? 1 : 0);
+    }, 0);
 
-      const panelofflineCount = results.length - panelonlineCount;
+    const panelofflineCount = results.length - panelonlineCount;
 
-      const atmStatusList = results.map(result => {
-        const timeDifference = currentTime - result.PanelEvtDt;
-        const isOnline = timeDifference <= fifteenMinutesInMillis;
-        return { AtmID: result.AtmID, status: isOnline ? 'online' : 'offline' };
-      });
+    const atmStatusList = results.map(result => {
+      const timeDifference = result.PanelEvtDt ? currentTime - result.PanelEvtDt : fifteenMinutesInMillis + 1;
+      const isOnline = timeDifference <= fifteenMinutesInMillis;
+      return { AtmID: result.AtmID, status: isOnline ? 'online' : 'offline' };
+    });
 
-      const totalATMs = results.length;
+    const totalATMs = results.length;
 
-      res.json({ totalATMs, panelonlineCount, panelofflineCount });
-    } else {
-      res.status(404).json({ error: 'Data not found' });
-    }
+    res.json({ totalATMs, panelonlineCount, panelofflineCount });
   });
 });
 
@@ -661,42 +657,26 @@ app.get('/get-incident',verifyToken, (req, res) => {
 
 
 // Define your API endpoint
-app.get('/site-list', (req, res) => {
-  // Check if SiteId query parameter is provided
-  if (req.query.SiteId) {
-    // Query to select records from SiteDetail table based on SiteId
-    const querySiteById = 'SELECT * FROM serveillance.SiteDetail WHERE SiteId = ?;';
-
-    // Execute query with SiteId parameter
-    connection.query(querySiteById, [req.query.SiteId], (errorSiteById, resultsSiteById) => {
-      if (errorSiteById) {
-        console.error('Error executing query for site by ID: ', errorSiteById);
-        res.status(500).json({ error: 'Internal server error' });
-        return;
-      }
-
-      res.json({
-        sites: resultsSiteById
-      });
-    });
-  } else {
-    // Query to select all records from SiteDetail table
-    const queryAllSites = 'SELECT * FROM serveillance.SiteDetail;';
-
-    // Execute query to fetch all records
-    connection.query(queryAllSites, (errorAllSites, resultsAllSites) => {
-      if (errorAllSites) {
-        console.error('Error executing query for all sites: ', errorAllSites);
-        res.status(500).json({ error: 'Internal server error' });
-        return;
-      }
-
-      res.json({
-        sites: resultsAllSites
-      });
-    });
+app.get('/site-list', async (req, res) => {
+  try {
+    if (req.query.SiteId) {
+      const querySiteById = 'SELECT * FROM serveillance.SiteDetail WHERE SiteId = ?;';
+      const [resultsSiteById] = await connection.promise().query(querySiteById, [req.query.SiteId]);
+      res.json({ sites: resultsSiteById });
+    } else {
+      const queryAllSites = 'SELECT * FROM serveillance.SiteDetail;';
+      const [resultsAllSites] = await connection.promise().query(queryAllSites);
+      res.json({ sites: resultsAllSites });
+    }
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  } finally {
+    // Close the connection when done
+    await connection.end();
   }
 });
+
 
 
 app.get('/total-location',verifyToken, (req, res) => {
