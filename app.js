@@ -661,41 +661,32 @@ app.get('/get-incident',verifyToken, (req, res) => {
 
 
 // Define your API endpoint
-app.get('/site-list', (req, res) => {
-  // Check if SiteId query parameter is provided
-  if (req.query.SiteId) {
-    // Query to select records from SiteDetail table based on SiteId
-    const querySiteById = 'SELECT * FROM serveillance.SiteDetail WHERE SiteId = ?;';
+app.get('/site-list',verifyToken, (req, res) => {
+  const allowedRoles = ['Admin', 'super admin','User'];
 
-    // Execute query with SiteId parameter
-    connection.query(querySiteById, [req.query.SiteId], (errorSiteById, resultsSiteById) => {
-      if (errorSiteById) {
-        console.error('Error executing query for site by ID: ', errorSiteById);
-        res.status(500).json({ error: 'Internal server error' });
-        return;
-      }
-
-      res.json({
-        sites: resultsSiteById
-      });
-    });
-  } else {
-    // Query to select all records from SiteDetail table
-    const queryAllSites = 'SELECT * FROM serveillance.SiteDetail;';
-
-    // Execute query to fetch all records
-    connection.query(queryAllSites, (errorAllSites, resultsAllSites) => {
-      if (errorAllSites) {
-        console.error('Error executing query for all sites: ', errorAllSites);
-        res.status(500).json({ error: 'Internal server error' });
-        return;
-      }
-
-      res.json({
-        sites: resultsAllSites
-      });
-    });
+  if (!allowedRoles.includes(req.user_data.role)) {
+    return res.status(403).json({ error: 'Permission denied. Insufficient role.' });
   }
+  const SiteId = req.query.SiteId;
+
+  // Use parameterized queries to prevent SQL injection
+  let sql = 'SELECT * FROM SiteDetail;';
+  let values = [];
+
+  if (SiteId) {
+    sql = 'SELECT * FROM SiteDetail WHERE SiteId = ?';
+    values = [SiteId];
+  }
+
+  connection.query(sql, values, (err, results) => {
+    if (err) {
+      console.error('Error executing MySQL query: ' + err.stack);
+      res.status(500).json({ error: 'Internal Server Error' });
+      return;
+    }
+
+    res.json(results);
+  });
 });
 
 
