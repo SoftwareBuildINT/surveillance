@@ -660,19 +660,44 @@ app.get('/get-incident',verifyToken, (req, res) => {
 });
 
 
+// Define your API endpoint
 app.get('/site-list', (req, res) => {
+  // Check if SiteId query parameter is provided
+  if (req.query.SiteId) {
+    // Query to select records from SiteDetail table based on SiteId
+    const querySiteById = 'SELECT * FROM serveillance.SiteDetail WHERE SiteId = ?;';
 
-  connection.query(`
-  SELECT * FROM SiteDetail
-`, (error, results) => {
-    if (error) {
-      console.error('Error retrieving site details:', error);
-      res.status(500).json({ error: 'Internal server error' });
-      return;
-    }
-    res.json(results);
-  });
+    // Execute query with SiteId parameter
+    connection.query(querySiteById, [req.query.SiteId], (errorSiteById, resultsSiteById) => {
+      if (errorSiteById) {
+        console.error('Error executing query for site by ID: ', errorSiteById);
+        res.status(500).json({ error: 'Internal server error' });
+        return;
+      }
+
+      res.json({
+        sites: resultsSiteById
+      });
+    });
+  } else {
+    // Query to select all records from SiteDetail table
+    const queryAllSites = 'SELECT * FROM serveillance.SiteDetail;';
+
+    // Execute query to fetch all records
+    connection.query(queryAllSites, (errorAllSites, resultsAllSites) => {
+      if (errorAllSites) {
+        console.error('Error executing query for all sites: ', errorAllSites);
+        res.status(500).json({ error: 'Internal server error' });
+        return;
+      }
+
+      res.json({
+        sites: resultsAllSites
+      });
+    });
+  }
 });
+
 
 app.get('/total-location',verifyToken, (req, res) => {
   const allowedRoles = ['Admin', 'super admin','User'];
