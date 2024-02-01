@@ -4,6 +4,7 @@ const mysql = require('mysql2/promise');
 const app = express();
 const port = 3000;
 
+module.exports = router;
 const pool  = mysql.createPool({
   host: '3.7.158.221',
   user: 'admin_buildINT',
@@ -57,16 +58,25 @@ app.get('/update_statuss', async (req, res) => {
 // Route to check the status of a specific ATM
 
 
-app.get('/check_status/:Atmid', async (req, res) => {
-  const AtmId = req.params.Atmid;
+const express = require('express');
+const router = express.Router();
+const pool = require('./your_database_connection'); // Import your database connection
+
+// Define the API endpoint
+app.get('/checkStatus/:AtmId', async (req, res) => {
+  const AtmId = req.params.AtmId;
 
   try {
     const connection = await pool.getConnection();
-    const [result] = await connection.query('SELECT * FROM LatestData WHERE AtmId = ?', [AtmId]);
+
+    // Query to check if there's a match between SiteDetail.AtmID and LatestData.AtmID
+    const [siteDetailResult] = await connection.query('SELECT * FROM SiteDetail WHERE AtmID = ?', [AtmId]);
+    const [latestDataResult] = await connection.query('SELECT * FROM LatestData WHERE AtmId = ?', [AtmId]);
+
     connection.release();
 
-    if (result.length > 0) {
-      const panelEvtDt = result[0].PanelEvtDt;
+    if (siteDetailResult.length > 0 && latestDataResult.length > 0) {
+      const panelEvtDt = latestDataResult[0].PanelEvtDt;
       const currentTime = new Date();
 
       // Check if the time difference is greater than 15 minutes
@@ -86,6 +96,7 @@ app.get('/check_status/:Atmid', async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
 
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
