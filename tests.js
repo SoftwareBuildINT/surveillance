@@ -14,6 +14,48 @@ const pool  = mysql.createPool({
   queueLimit: 0
 });
 
+// New route for updating the status based on the provided query
+// New route for updating the status based on the provided query
+// New route for updating the status based on the provided query
+app.get('/update_status', async (req, res) => {
+  try {
+    const connection = await pool.getConnection();
+    // Execute the provided MySQL update query
+    await connection.query(`
+      UPDATE SiteDetail
+      JOIN LatestData ON SiteDetail.AtmID = LatestData.AtmId
+      SET SiteDetail.Status = 
+        CASE
+          WHEN TIMESTAMPDIFF(MINUTE, (LatestData.PanelEvtDt), (LatestData.IstEvtDt)) > 15 THEN 'offline'
+          WHEN TIMESTAMPDIFF(MINUTE, (LatestData.PanelEvtDt), (LatestData.IstEvtDt)) <= 15 THEN 'online'
+        END
+      WHERE LatestData.AtmId = ?
+    `, [req.query.AtmId]); // Pass the ATM ID as a parameter
+    connection.release();
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+;
+
+app.get('/update_statuss', async (req, res) => {
+  try {
+    const connection = await pool.getConnection();
+    // Execute the provided MySQL update query
+    await connection.query(`
+     select AtmId 
+    `, [req.query.AtmId]); // Pass the ATM ID as a parameter
+    connection.release();
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+// Route to check the status of a specific ATM
+
 
 app.get('/check_status/:Atmid', async (req, res) => {
   const AtmId = req.params.Atmid;
@@ -44,6 +86,7 @@ app.get('/check_status/:Atmid', async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
 });
