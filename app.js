@@ -10,7 +10,6 @@ const path = require('path');
 const cors = require('cors');
 const bcrypt = require('bcrypt');
 // const mysql = require('mysql2/promise');
-
 app.use(express.static('public'));
 app.use(bodyParser.json());
 const storage = multer.memoryStorage(); // Store the image in memory
@@ -547,6 +546,8 @@ app.post('/addsite', verifyToken, (req, res) => {
 });
 
 app.get('/site-list', (req, res) => {
+  const SiteId = req.params.SiteId;
+  console.log(SiteId)
   // const allowedRoles = ['Admin', 'super admin','User'];
 
   // if (!allowedRoles.includes(req.user_data.role)) {
@@ -554,11 +555,11 @@ app.get('/site-list', (req, res) => {
   // }
 
   // Use parameterized queries to prevent SQL injection
-  let sql = 'SELECT SiteDetail.*, City.CityId, City.CityName, State.StateId, State.StateName,Region.RegionName FROM SiteDetail JOIN City ON SiteDetail.City = City.CityId JOIN State ON SiteDetail.State = State.StateId JOIN Region ON SiteDetail.Region = Region.RegionId';
+  let sql = 'SELECT SiteDetail.*, City.CityId, City.CityName, State.StateId, State.StateName,Region.RegionName FROM SiteDetail JOIN City ON SiteDetail.City = City.CityId JOIN State ON SiteDetail.State = State.StateId JOIN Region ON SiteDetail.Region = Region.RegionId WHERE SiteId = ?';
   let values = [];
 
   
-  connection.query(sql, values, (err, results) => {
+  connection.query(sql,[SiteId],values, (err, results) => {
     if (err) {
       console.error('Error executing MySQL query: ' + err.stack);
       res.status(500).json({ error: 'Internal Server Error' });
@@ -885,7 +886,89 @@ app.get('/checkStatus', (req, res) => {
     res.json({ totalATMs, panelonlineCount, panelofflineCount });
   });
 });
+app.get('/org/list', (req, res) => {
 
+  connection.query(`
+  SELECT concat(MangFName,' ',MangLName) as OrgName,MangFName,MangLName,MangEmail, Mangcontact,SubClient,CreatedBy FROM Organization;
+`, (error, results) => {
+    if (error) {
+      console.error('Error retrieving Users details:', error);
+      res.status(500).json({ error: 'Internal server error' });
+      return;
+    }
+    res.json(results);
+  });
+});
 app.listen(3328, () => {
   console.log('Server is running on port 3328');
 });
+
+
+// AWS.config.update({
+//   accessKeyId: 'YOUR_ACCESS_KEY',
+//   secretAccessKey: 'YOUR_SECRET_KEY',
+//   region: 'YOUR_REGION',
+// });
+
+// const s3 = new AWS.S3();
+
+// // Set up multer and multer-s3 for file uploads
+// const upload = multer({
+//   storage: multerS3({
+//     s3: s3,
+//     bucket: 'YOUR_S3_BUCKET_NAME',
+//     acl: 'public-read',
+//     key: function (req, file, cb) {
+//       cb(null, 'uploads/' + Date.now() + '-' + file.originalname);
+//     },
+//   }),
+// });
+
+// // app.post('/api/upload', upload.single('uploadImage'), (req, res) => {
+// //   const {
+// //     OrgName,
+// //     SubClient,
+// //     MangFName,
+// //     MangLName,
+// //     Mangcontact,
+// //     MangEmail,
+// //   } = req.body;
+
+// //   // Get the S3 URL of the uploaded image
+// //   const imageUrl = req.file.location;
+
+// //   // Insert data into the MySQL database
+// //   const sql =
+// //     'INSERT INTO Organization (OrgName, SubClient, MangFName, MangLName, Mangcontact, MangEmail, image) VALUES (?, ?, ?, ?, ?, ?, ?)';
+// //   const values = [
+// //     OrgName,
+// //     SubClient,
+// //     MangFName,
+// //     MangLName,
+// //     Mangcontact,
+// //     MangEmail,
+// //     imageUrl, // Use the S3 URL instead of imageBuffer
+// //   ];
+
+// //   connection.query(sql, values, (err, result) => {
+// //     if (err) {
+// //       console.error('Error inserting data into the database:', err);
+// //       res.status(500).json({ success: false, message: 'Internal server error' });
+// //     } else {
+// //       console.log('Data inserted into the database:', result);
+// //       res.json({
+// //         success: true,
+// //         message: 'Data received and inserted into the database successfully',
+// //         data: {
+// //           OrgName,
+// //           SubClient,
+// //           MangFName,
+// //           MangLName,
+// //           Mangcontact,
+// //           MangEmail,
+// //           imageUrl,
+// //         },
+// //       });
+// //     }
+// //   });
+// // });
