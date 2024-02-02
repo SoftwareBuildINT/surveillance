@@ -5,6 +5,8 @@ const nodemailer = require('nodemailer');
 const bodyParser = require('body-parser');
 const jwt = require('jsonwebtoken');
 const app = express();
+const multer = require('multer');
+const path = require('path');
 const cors = require('cors');
 const bcrypt = require('bcrypt');
 // const mysql = require('mysql2/promise');
@@ -12,6 +14,10 @@ const bcrypt = require('bcrypt');
 
 app.use(express.static('public'));
 app.use(bodyParser.json());
+const storage = multer.memoryStorage(); // Store the image in memory
+const upload = multer({ storage: storage });
+
+
 const corsOptions = {
   origin: '*',
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
@@ -56,7 +62,58 @@ const verifyToken = (req, res, next) => {
   });
 };
 
+app.post('/api/upload', upload.single('uploadImage'), (req, res) => {
+  const {
+    OrgName,
+    SubClient,
+    MangFName,
+    MangLName,
+    Mangcontact,
+    MangEmail,
+    IsActive,
+    CreatedBy,
+  } = req.body;
 
+  const imageBuffer = req.file ? req.file.buffer : null;
+
+  // Insert data into the MySQL database
+  const sql =
+    'INSERT INTO Organization (OrgName, SubClient, MangFName, MangLName, Mangcontact, MangEmail, IsActive, CreatedBy, image) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)';
+  const values = [
+    OrgName,
+    SubClient,
+    MangFName,
+    MangLName,
+    Mangcontact,
+    MangEmail,
+    IsActive,
+    CreatedBy,
+    imageBuffer,
+  ];
+
+  connection.query(sql, values, (err, result) => {
+    if (err) {
+      console.error('Error inserting data into the database:', err);
+      res.status(500).json({ success: false, message: 'Internal server error' });
+    } else {
+      console.log('Data inserted into the database:', result);
+      res.json({
+        success: true,
+        message: 'Data received and inserted into the database successfully',
+        data: {
+          OrgName,
+          SubClient,
+          MangFName,
+          MangLName,
+          Mangcontact,
+          MangEmail,
+          IsActive,
+          CreatedBy,
+        },
+      });
+    }
+  });
+});
 app.get('/profile', verifyToken, (req, res) => {
   // Check if the user has the required roles to perform this action
   const allowedRoles = ['Admin', 'super admin', 'User'];
@@ -812,7 +869,7 @@ app.get('/api/states', verifyToken, (req, res) => {
 });
 //addsyeekig
 app.get('/api/cities',verifyToken, (req, res) => {
-  const allowedRoles = ['Admin', 'super admin','User'];
+  const allowedRoles = ['Admin','super admin','User'];
 
   if (!allowedRoles.includes(req.user_data.role)) {
     return res.status(403).json({ error: 'Permission denied. Insufficient role.' });

@@ -56,7 +56,6 @@ const verifyToken = (req, res, next) => {
   });
 };
 
-
 app.get('/profile', verifyToken, (req, res) => {
   // Check if the user has the required roles to perform this action
   const allowedRoles = ['Admin', 'super admin', 'User'];
@@ -281,7 +280,6 @@ app.post('/addsite', verifyToken, (req, res) => {
   });
 });
 
-
 //update site 
 app.put('/update-site/:siteId', verifyToken, (req, res) => {
   // Check if the user has the required roles to perform this action
@@ -373,7 +371,6 @@ app.put('/update-site/:siteId', verifyToken, (req, res) => {
   });
 });
 
-
 // side delete api
 app.delete('/delete-site/:siteId', verifyToken, (req, res) => {
   // Check if the user has the required roles to perform this action
@@ -405,8 +402,6 @@ app.delete('/delete-site/:siteId', verifyToken, (req, res) => {
     return res.json({ message: 'Site deleted successfully' });
   });
 });
-
-
 
 app.post('/addUser', async (req, res) => {
   const { FirstName,LastName,EmailId, password, token, expiration_time, otp, role, Organization,ContactNo } = req.body;
@@ -635,7 +630,6 @@ app.post('/reset-password', async (req, res) => {
   }
 });
 
-
 // ADD SITE
 app.post('/addsite', verifyToken, (req, res) => {
   // Check if the user has the required roles to perform this action
@@ -726,8 +720,6 @@ app.post('/addsite', verifyToken, (req, res) => {
 });
 //INCIDENT
 
-
-
 app.post('/incident', verifyToken, (req, res) => {
   // Check if the user has the required roles to perform this action
   const allowedRoles = ['Admin', 'super admin','User'];
@@ -810,7 +802,6 @@ app.get('/get-incident',verifyToken, (req, res) => {
   });
 });
 
-
 app.get('/site-list', (req, res) => {
 
   connection.query(`
@@ -878,8 +869,6 @@ app.get('/total-router',verifyToken, (req, res) => {
     res.json({ routerCount });
   });
 });
-
-
 
 app.get('/user-list', (req, res) => {
 
@@ -980,7 +969,6 @@ app.get('/api/cities',verifyToken, (req, res) => {
   });
 });
 
-
 // Logout route
 app.post('/logout', (req, res) => {
   // Clear the JWT token from the client-side storage
@@ -991,6 +979,35 @@ app.post('/logout', (req, res) => {
 });
 
 
+app.get('/incident', (req, res) => {
+  const IncidentName = req.query.IncidentNames;
+
+  // Check if incidentName is 'door sensor'
+  if (IncidentName && IncidentName.toLowerCase() === 'door sensor') {
+    // Query the database for critical data
+    const query = 'SELECT * FROM IncidentDetail WHERE IncidentName = ? AND AlertType = 1';
+
+    db.query(query, [IncidentName], (err, results) => {
+      if (err) {
+        console.error('Error executing query:', err);
+        res.status(500).json({ error: 'Internal Server Error' });
+        return;
+      }
+
+      // Send the results as JSON
+      res.json(results);
+    });
+  } else {
+    // Return an error if the incident name is not 'door sensor'
+    res.status(400).json({ error: 'Invalid Incident Name' });
+  }
+});
+
+
+// Start the server
+app.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
+});
 app.listen(3328, () => {
   console.log('Server is running on port 3328');
 });
