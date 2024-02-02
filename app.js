@@ -908,6 +908,29 @@ app.get('/org/list',verifyToken, (req, res) => {
     res.json(results);
   });
 });
+
+app.delete('/deletecilent/:Cilent', (req, res) => {
+  // Check if the user has the required roles to perform this action
+  
+  const Cilent = req.params.Cilent; // Retrieve siteId from URL parameters
+  console.log(Cilent)
+
+  const sql = 'DELETE FROM Organization WHERE OrgName = ?;'; // Use parameterized query
+
+  connection.query(sql, [Cilent], (err, results) => {
+    if (err) {
+      console.error('Error deleting user from MySQL:', err);
+      return res.status(500).json({ message: 'Error deleting user from the database.' });
+    }
+
+    if (results.affectedRows === 0) {
+      return res.status(404).json({ message: 'User not found or already deleted.' });
+    }
+
+    // Respond with a success message
+    return res.json({ message: 'User deleted successfully' });
+  });
+});
 app.listen(3328, () => {
   console.log('Server is running on port 3328');
 });
