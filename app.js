@@ -904,15 +904,14 @@ app.get('/org/list', (req, res) => {
   });
 });
 
-app.delete('/deletecilent/:Cilent', (req, res) => {
+app.delete('/deletecilent/:OrgId', (req, res) => {
   // Check if the user has the required roles to perform this action
   
-  const Cilent = req.params.Cilent; // Retrieve siteId from URL parameters
-  console.log(Cilent)
+  const OrgId = req.params.OrgId; // Retrieve siteId from URL parameters
 
-  const sql = 'DELETE FROM Organization WHERE OrgName = ?;'; // Use parameterized query
+  const sql = 'DELETE FROM Organization WHERE OrgId = ?;'; // Use parameterized query
 
-  connection.query(sql, [Cilent], (err, results) => {
+  connection.query(sql, [OrgId], (err, results) => {
     if (err) {
       
       console.error('Error deleting user from MySQL:', err);
