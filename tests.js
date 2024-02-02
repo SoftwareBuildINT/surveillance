@@ -55,7 +55,7 @@ app.post('/update-incident', (req, res) => {
 });
 
 
-app.get('/site-list/:SiteId', (req, res) => {
+app.get('/site-list/:SiteId?', (req, res) => {
   const SiteId = req.params.SiteId;
   console.log(SiteId);
 
@@ -66,7 +66,12 @@ app.get('/site-list/:SiteId', (req, res) => {
   // }
 
   // Use parameterized queries to prevent SQL injection
-  let sql = 'SELECT SiteDetail.*, City.CityId, City.CityName, State.StateId, State.StateName, Region.RegionName FROM SiteDetail JOIN City ON SiteDetail.City = City.CityId JOIN State ON SiteDetail.State = State.StateId JOIN Region ON SiteDetail.Region = Region.RegionId WHERE SiteDetail.SiteId = ?';
+  let sql = 'SELECT SiteDetail.*, City.CityId, City.CityName, State.StateId, State.StateName, Region.RegionName FROM SiteDetail JOIN City ON SiteDetail.City = City.CityId JOIN State ON SiteDetail.State = State.StateId JOIN Region ON SiteDetail.Region = Region.RegionId';
+
+  // Add WHERE clause only if SiteId is provided
+  if (SiteId) {
+    sql += ' WHERE SiteDetail.SiteId = ?';
+  }
 
   connection.query(sql, [SiteId], (err, results) => {
     if (err) {
@@ -79,6 +84,7 @@ app.get('/site-list/:SiteId', (req, res) => {
   });
 
 });
+
 
 function executeQuery(SiteId) {
   return new Promise((resolve, reject) => {
