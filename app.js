@@ -11,7 +11,6 @@ const cors = require('cors');
 const bcrypt = require('bcrypt');
 // const mysql = require('mysql2/promise');
 
-
 app.use(express.static('public'));
 app.use(bodyParser.json());
 const storage = multer.memoryStorage(); // Store the image in memory
@@ -61,7 +60,6 @@ const verifyToken = (req, res, next) => {
     next();
   });
 };
-
 
 app.post('/login', async (req, res) => {
   const { EmailId, password } = req.body;
@@ -335,8 +333,6 @@ app.post('/logout', (req, res) => {
   res.status(200).json({ message: 'Logout successful' });
 });
 
-//user
-
 // side delete api
 app.delete('/delete-site/:siteId', verifyToken, (req, res) => {
   // Check if the user has the required roles to perform this action
@@ -369,8 +365,6 @@ app.delete('/delete-site/:siteId', verifyToken, (req, res) => {
   });
 });
 
-
-
 app.post('/addUser', async (req, res) => {
   const { FirstName,LastName,EmailId, password, token, expiration_time, otp, role, Organization,ContactNo } = req.body;
 
@@ -394,7 +388,6 @@ app.post('/addUser', async (req, res) => {
       res.status(500).json({ error: 'Failed to register user.' });
   }
 });
-
 
 // ADD SITE
 app.post('/addsite', verifyToken, (req, res) => {
@@ -576,8 +569,6 @@ app.get('/site-list', (req, res) => {
   });
 });
 
-
-
 app.post('/incident', verifyToken, (req, res) => {
   // Check if the user has the required roles to perform this action
   const allowedRoles = ['Admin', 'super admin','User'];
@@ -660,7 +651,6 @@ app.get('/get-incident',verifyToken, (req, res) => {
   });
 });
 
-
 app.get('/total-location',verifyToken, (req, res) => {
   const allowedRoles = ['Admin', 'super admin','User'];
 
@@ -714,8 +704,6 @@ app.get('/total-router',verifyToken, (req, res) => {
     res.json({ routerCount });
   });
 });
-
-
 
 app.get('/user-list', (req, res) => {
 
@@ -825,15 +813,14 @@ app.post('/api/upload', upload.single('uploadImage'), (req, res) => {
     MangLName,
     Mangcontact,
     MangEmail,
-    IsActive,
-    CreatedBy,
+ y,
   } = req.body;
 
   const imageBuffer = req.file ? req.file.buffer : null;
 
   // Insert data into the MySQL database
   const sql =
-    'INSERT INTO Organization (OrgName, SubClient, MangFName, MangLName, Mangcontact, MangEmail, IsActive, CreatedBy, image) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)';
+    'INSERT INTO Organization (OrgName, SubClient, MangFName, MangLName, Mangcontact, MangEmail, image) VALUES ( ?, ?, ?, ?, ?, ?, ?)';
   const values = [
     OrgName,
     SubClient,
@@ -841,8 +828,7 @@ app.post('/api/upload', upload.single('uploadImage'), (req, res) => {
     MangLName,
     Mangcontact,
     MangEmail,
-    IsActive,
-    CreatedBy,
+
     imageBuffer,
   ];
 
@@ -861,9 +847,7 @@ app.post('/api/upload', upload.single('uploadImage'), (req, res) => {
           MangFName,
           MangLName,
           Mangcontact,
-          MangEmail,
-          IsActive,
-          CreatedBy,
+          MangEmail
         },
       });
     }
@@ -901,8 +885,6 @@ app.get('/checkStatus', (req, res) => {
     res.json({ totalATMs, panelonlineCount, panelofflineCount });
   });
 });
-
-
 
 app.listen(3328, () => {
   console.log('Server is running on port 3328');
