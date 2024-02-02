@@ -663,17 +663,12 @@ app.get('/site-list', (req, res) => {
   // if (!allowedRoles.includes(req.user_data.role)) {
   //   return res.status(403).json({ error: 'Permission denied. Insufficient role.' });
   // }
-  const SiteId = req.query.SiteId;
 
   // Use parameterized queries to prevent SQL injection
-  let sql = 'SELECT * FROM SiteDetail;';
+  let sql = 'SELECT SiteDetail.*, City.CityId, City.CityName FROM SiteDetail JOIN City ON SiteDetail.City = CityId';
   let values = [];
 
-  if (SiteId) {
-    sql = 'SELECT * FROM SiteDetail WHERE SiteId = ?';
-    values = [SiteId];
-  }
-
+  
   connection.query(sql, values, (err, results) => {
     if (err) {
       console.error('Error executing MySQL query: ' + err.stack);
@@ -684,6 +679,8 @@ app.get('/site-list', (req, res) => {
     res.json(results);
   });
 });
+
+
 
 
 
@@ -830,6 +827,7 @@ app.get('/api/cities',verifyToken, (req, res) => {
     sql = 'SELECT CityId, CityName FROM City WHERE StateId = ?';
     values = [stateId];
   }
+  console.log(values)
 
   connection.query(sql, values, (err, results) => {
     if (err) {
