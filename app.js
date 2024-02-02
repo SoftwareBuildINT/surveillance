@@ -665,7 +665,7 @@ app.get('/site-list', (req, res) => {
   // }
 
   // Use parameterized queries to prevent SQL injection
-  let sql = 'SELECT SiteDetail.*, City.CityId, City.CityName FROM SiteDetail JOIN City ON SiteDetail.City = CityId';
+  let sql = 'SELECT SiteDetail.*, City.CityId, City.CityName, State.StateId, State.StateName,Region.RegionName FROM SiteDetail JOIN City ON SiteDetail.City = City.CityId JOIN State ON SiteDetail.State = State.StateId JOIN Region ON SiteDetail.Region = Region.RegionId';
   let values = [];
 
   
