@@ -35,11 +35,10 @@ app.use(express.json());
 // Connect to the MySQL database
 connection.getConnection((err) => {
   if (err) {
-    console.error('Error connecting to MySQL database: ' + err.message);
+    console.error('Error connecting to database:', err);
     return;
   }
-  console.log('Connected to MySQL database');
-
+  console.log('Connected to the database');
 });
 const verifyToken = (req, res, next) => {
   const token = req.headers.authorization;
@@ -545,21 +544,20 @@ app.post('/addsite', verifyToken, (req, res) => {
   });
 });
 
-app.get('/site-list', (req, res) => {
+app.get('/site-list/:SiteId', (req, res) => {
   const SiteId = req.params.SiteId;
-  console.log(SiteId)
-  // const allowedRoles = ['Admin', 'super admin','User'];
+  console.log(SiteId);
+
+  // const allowedRoles = ['Admin', 'super admin', 'User'];
 
   // if (!allowedRoles.includes(req.user_data.role)) {
   //   return res.status(403).json({ error: 'Permission denied. Insufficient role.' });
   // }
 
   // Use parameterized queries to prevent SQL injection
-  let sql = 'SELECT SiteDetail.*, City.CityId, City.CityName, State.StateId, State.StateName,Region.RegionName FROM SiteDetail JOIN City ON SiteDetail.City = City.CityId JOIN State ON SiteDetail.State = State.StateId JOIN Region ON SiteDetail.Region = Region.RegionId WHERE SiteId = ?';
-  let values = [];
+  let sql = 'SELECT SiteDetail.*, City.CityId, City.CityName, State.StateId, State.StateName, Region.RegionName FROM SiteDetail JOIN City ON SiteDetail.City = City.CityId JOIN State ON SiteDetail.State = State.StateId JOIN Region ON SiteDetail.Region = Region.RegionId WHERE SiteDetail.SiteId = ?';
 
-  
-  connection.query(sql,[SiteId],values, (err, results) => {
+  connection.query(sql, [SiteId], (err, results) => {
     if (err) {
       console.error('Error executing MySQL query: ' + err.stack);
       res.status(500).json({ error: 'Internal Server Error' });
@@ -568,6 +566,7 @@ app.get('/site-list', (req, res) => {
 
     res.json(results);
   });
+
 });
 
 app.post('/incident', verifyToken, (req, res) => {
@@ -886,7 +885,13 @@ app.get('/checkStatus', (req, res) => {
     res.json({ totalATMs, panelonlineCount, panelofflineCount });
   });
 });
-app.get('/org/list', (req, res) => {
+app.get('/org/list',verifyToken, (req, res) => {
+  // Check if the user has the required roles to perform this action
+  const allowedRoles = ['Admin', 'super admin', 'User'];
+
+  if (!req.user_data || !req.user_data.role || !allowedRoles.includes(req.user_data.role)) {
+    return res.status(403).json({ error: 'Permission denied. Insufficient role.' });
+  }
 
   connection.query(`
   SELECT concat(MangFName,' ',MangLName) as OrgName,MangFName,MangLName,MangEmail, Mangcontact,SubClient,CreatedBy FROM Organization;
