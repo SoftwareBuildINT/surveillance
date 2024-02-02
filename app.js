@@ -897,7 +897,6 @@ app.get('/org/list',verifyToken, (req, res) => {
   if (!req.user_data || !req.user_data.role || !allowedRoles.includes(req.user_data.role)) {
     return res.status(403).json({ error: 'Permission denied. Insufficient role.' });
   }
-
   connection.query(`
   SELECT concat(MangFName,' ',MangLName) as OrgName,MangFName,MangLName,MangEmail, Mangcontact,SubClient,CreatedBy FROM Organization;
 `, (error, results) => {
