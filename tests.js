@@ -55,36 +55,25 @@ app.post('/update-incident', (req, res) => {
 });
 
 
-app.get('/site-list/:SiteId?', (req, res) => {
-  const SiteId = req.params.SiteId;
-  console.log(SiteId);
+app.get('/site-list', async (req, res) => {
+  const SiteId = req.query.SiteId; // Assuming SiteId is in the query parameters
 
-  // const allowedRoles = ['Admin', 'super admin', 'User'];
-
-  // if (!allowedRoles.includes(req.user_data.role)) {
-  //   return res.status(403).json({ error: 'Permission denied. Insufficient role.' });
-  // }
-
-  // Use parameterized queries to prevent SQL injection
-  let sql = 'SELECT SiteDetail.*, City.CityId, City.CityName, State.StateId, State.StateName, Region.RegionName FROM SiteDetail JOIN City ON SiteDetail.City = City.CityId JOIN State ON SiteDetail.State = State.StateId JOIN Region ON SiteDetail.Region = Region.RegionId';
-
-  // Add WHERE clause only if SiteId is provided
-  if (SiteId) {
-    sql += ' WHERE SiteDetail.SiteId = ?';
+  if (!SiteId) {
+    return res.status(400).json({ error: 'SiteId is required.' });
   }
 
-  connection.query(sql, [SiteId], (err, results) => {
-    if (err) {
-      console.error('Error executing MySQL query: ' + err.stack);
-      res.status(500).json({ error: 'Internal Server Error' });
-      return;
+  try {
+    const results = await executeQuery(SiteId);
+    if (results.length === 0) {
+      return res.status(404).json({ error: 'Site not found.' });
     }
 
     res.json(results);
-  });
-
+  } catch (err) {
+    console.error('Error executing MySQL query: ' + err.stack);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
 });
-
 
 function executeQuery(SiteId) {
   return new Promise((resolve, reject) => {
@@ -99,13 +88,26 @@ function executeQuery(SiteId) {
   });
 }
 
+app.get('/org/list', (req, res) => {
+
+  connection.query(`
+  SELECT concat(MangFName,' ',MangLName) as OrgName,MangFName,MangLName,MangEmail, Mangcontact,SubClient,CreatedBy FROM Organization;
+`, (error, results) => {
+    if (error) {
+      console.error('Error retrieving Users details:', error);
+      res.status(500).json({ error: 'Internal server error' });
+      return;
+    }
+    res.json(results);
+  });
+});
 
 app.post('/addsite', (req, res) => {
   // Check if the user has the required roles to perform this action
+  
 
   const {
-    AtmId,
-    BranchName, Client, SubClient,
+    AtmId, BranchName, Client, SubClient,
     City,
     State,
     PanelMake,
@@ -136,7 +138,6 @@ app.post('/addsite', (req, res) => {
     if (checkResults.length > 0) {
       // If the record exists, update it
       const updateSQL = `UPDATE SiteDetail SET
-      AtmId=?,
         BranchName = ?,
         Client = ?,
         SubClient = ?,
@@ -160,7 +161,6 @@ app.post('/addsite', (req, res) => {
         WHERE AtmId = ?`;
 
       const updateValues = [
-        AtmId,
         BranchName,
         Client,
         SubClient,
@@ -254,28 +254,7 @@ app.post('/addsite', (req, res) => {
   });
 });
 
-app.delete('/deletecilent/:Cilent', (req, res) => {
-  // Check if the user has the required roles to perform this action
-  
-  const Cilent = req.params.Cilent; // Retrieve siteId from URL parameters
-  console.log(Cilent)
 
-  const sql = 'DELETE FROM Organization WHERE OrgName = ?;'; // Use parameterized query
-
-  connection.query(sql, [Cilent], (err, results) => {
-    if (err) {
-      console.error('Error deleting user from MySQL:', err);
-      return res.status(500).json({ message: 'Error deleting user from the database.' });
-    }
-
-    if (results.affectedRows === 0) {
-      return res.status(404).json({ message: 'User not found or already deleted.' });
-    }
-
-    // Respond with a success message
-    return res.json({ message: 'User deleted successfully' });
-  });
-});
 // Start the server
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);

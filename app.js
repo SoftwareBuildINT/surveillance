@@ -890,15 +890,10 @@ app.get('/checkStatus', (req, res) => {
     res.json({ totalATMs, panelonlineCount, panelofflineCount });
   });
 });
-app.get('/org/list',verifyToken, (req, res) => {
-  // Check if the user has the required roles to perform this action
-  const allowedRoles = ['Admin', 'super admin', 'User'];
+app.get('/org/list', (req, res) => {
 
-  if (!req.user_data || !req.user_data.role || !allowedRoles.includes(req.user_data.role)) {
-    return res.status(403).json({ error: 'Permission denied. Insufficient role.' });
-  }
   connection.query(`
-  SELECT concat(MangFName,' ',MangLName) as OrgName,MangFName,MangLName,MangEmail, Mangcontact,SubClient,CreatedBy FROM Organization;
+  SELECT concat(MangFName,' ',MangLName) as username,MangFName,MangLName,MangEmail, Mangcontact,SubClient,CreatedBy FROM Organization;
 `, (error, results) => {
     if (error) {
       console.error('Error retrieving Users details:', error);
@@ -919,6 +914,7 @@ app.delete('/deletecilent/:Cilent', (req, res) => {
 
   connection.query(sql, [Cilent], (err, results) => {
     if (err) {
+      
       console.error('Error deleting user from MySQL:', err);
       return res.status(500).json({ message: 'Error deleting user from the database.' });
     }
@@ -1004,3 +1000,6 @@ app.listen(3328, () => {
 // //     }
 // //   });
 // // });
+
+
+
