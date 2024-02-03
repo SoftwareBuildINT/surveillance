@@ -926,6 +926,21 @@ app.delete('/deletecilent/:OrgId', (req, res) => {
     return res.json({ message: 'User deleted successfully' });
   });
 });
+
+//Incident Uodate procedure 
+app.post('/update-incident', (req, res) => {
+  // Call the stored procedure
+  connection.query('CALL UpdateAllIncidents()', (err, result) => {
+    if (err) {
+      console.error('Error updating incident details:', err);
+      res.status(500).send('Internal Server Error');
+    } else {
+      console.log('Incident details updated successfully');
+      res.status(200).send('Incident details updated successfully');
+    }
+  });
+});
+
 app.listen(3328, () => {
   console.log('Server is running on port 3328');
 });

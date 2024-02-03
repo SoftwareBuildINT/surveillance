@@ -1,9 +1,9 @@
 const express = require('express');
 const mysql = require('mysql2');
-
+const bodyParser = require('body-parser');
 const app = express();
 const port = 3000;
-
+app.use(bodyParser.json());
 // Create a MySQL connection
 const connection = mysql.createPool({
   host: '3.7.158.221',
@@ -22,37 +22,7 @@ connection.getConnection((err) => {
 });
 
 // Define the API endpoint for updating incident details using POST method
-app.post('/update-incident', (req, res) => {
-  const {incidentName} = req.body;
 
-  let updateQuery;
-
-  if (incidentName === 'door') {
-    updateQuery = `
-      UPDATE IncidentDetail
-      SET AlertType = '1'
-      WHERE IncidentName = 'door';
-    `;
-  } else if (incidentName === 'motion') {
-    updateQuery = `
-      UPDATE IncidentDetail
-      SET AlertType = '2'
-      WHERE IncidentName = 'motion';
-    `;
-  } else {
-    return res.status(400).send('Invalid IncidentName');
-  }
-  // Execute the update query
-  connection.query(updateQuery, (err, result) => {
-    if (err) {
-      console.error('Error updating incident details:', err);
-      res.status(500).send('Internal Server Error');
-    } else {
-      console.log('Incident details updated successfully');
-      res.status(200).send('Incident details updated successfully');
-    }
-  });
-});
 
 
 app.get('/site-list', async (req, res) => {
@@ -253,6 +223,23 @@ app.post('/addsite', (req, res) => {
     }
   });
 });
+
+
+
+app.post('/update-incident', (req, res) => {
+  // Call the stored procedure
+  connection.query('CALL UpdateAllIncidents()', (err, result) => {
+    if (err) {
+      console.error('Error updating incident details:', err);
+      res.status(500).send('Internal Server Error');
+    } else {
+      console.log('Incident details updated successfully');
+      res.status(200).send('Incident details updated successfully');
+    }
+  });
+});
+
+
 
 
 // Start the server
