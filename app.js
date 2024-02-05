@@ -397,7 +397,7 @@ app.post('/addsite', verifyToken, (req, res) => {
   }
 
   const {
-    AtmID, BranchName, Client, SubClient,SiteId,
+    AtmId, BranchName, Client, SubClient,
     City,
     State,
     PanelMake,
@@ -416,11 +416,10 @@ app.post('/addsite', verifyToken, (req, res) => {
     MseContact,
     Region
   } = req.body;
-  console.log(req.body)
 
   // Check if the record with the given AtmId already exists
-  const checkIfExistsSQL = 'SELECT * FROM SiteDetail WHERE SiteId = ?';
-  connection.query(checkIfExistsSQL, [SiteId], (checkErr, checkResults) => {
+  const checkIfExistsSQL = 'SELECT * FROM SiteDetail WHERE AtmId = ?';
+  connection.query(checkIfExistsSQL, [AtmId], (checkErr, checkResults) => {
     if (checkErr) {
       console.error('Error checking if record exists in MySQL:', checkErr);
       return res.status(500).json({ message: 'Error checking if record exists in the database.' });
@@ -449,7 +448,7 @@ app.post('/addsite', verifyToken, (req, res) => {
         MseEmail = ?,
         MseContact = ?,
         Region = ?
-        WHERE SiteId = ?`;
+        WHERE AtmId = ?`;
 
       const updateValues = [
         BranchName,
@@ -472,9 +471,9 @@ app.post('/addsite', verifyToken, (req, res) => {
         MseEmail,
         MseContact,
         Region,
-        AtmID
+        AtmId
       ];
-      console.log(updateValues)
+
       connection.query(updateSQL, updateValues, (updateErr, updateResults) => {
         if (updateErr) {
           console.error('Error updating data in MySQL:', updateErr);
@@ -486,7 +485,7 @@ app.post('/addsite', verifyToken, (req, res) => {
     } else {
       // If the record doesn't exist, insert a new one
       const insertSQL = `INSERT INTO SiteDetail(
-        AtmID,
+        AtmId,
         BranchName,
         Client,
         SubClient,
@@ -510,7 +509,7 @@ app.post('/addsite', verifyToken, (req, res) => {
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
       const insertValues = [
-        AtmID,
+        AtmId,
         BranchName,
         Client,
         SubClient,
@@ -544,6 +543,7 @@ app.post('/addsite', verifyToken, (req, res) => {
     }
   });
 });
+
 
 app.get('/site-list/:SiteId?', (req, res) => {
   const SiteId = req.params.SiteId;
