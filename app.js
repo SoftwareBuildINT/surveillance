@@ -420,7 +420,7 @@ app.post('/addsite', verifyToken, (req, res) => {
 
   // Check if the record with the given AtmId already exists
   const checkIfExistsSQL = 'SELECT * FROM SiteDetail WHERE SiteId = ?';
-  connection.query(checkIfExistsSQL, [AtmID], (checkErr, checkResults) => {
+  connection.query(checkIfExistsSQL, [SiteId], (checkErr, checkResults) => {
     if (checkErr) {
       console.error('Error checking if record exists in MySQL:', checkErr);
       return res.status(500).json({ message: 'Error checking if record exists in the database.' });
