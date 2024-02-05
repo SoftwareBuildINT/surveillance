@@ -893,7 +893,7 @@ app.get('/checkStatus', (req, res) => {
 app.get('/org/list', (req, res) => {
 
   connection.query(`
-  SELECT OrgName, concat(MangFName,' ',MangLName) as MangName ,MangEmail, Mangcontact,SubClient,CreatedBy FROM Organization where IsActive = 1;
+  SELECT OrgId,OrgName, concat(MangFName,' ',MangLName) as MangName ,MangEmail, Mangcontact,SubClient,CreatedBy FROM Organization where IsActive = 1;
 `, (error, results) => {
     if (error) {
       console.error('Error retrieving Users details:', error);
