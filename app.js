@@ -397,7 +397,7 @@ app.post('/addsite', verifyToken, (req, res) => {
   }
 
   const {
-    AtmId, BranchName, Client, SubClient,
+    AtmID, BranchName, Client, SubClient,
     City,
     State,
     PanelMake,
@@ -418,8 +418,8 @@ app.post('/addsite', verifyToken, (req, res) => {
   } = req.body;
 
   // Check if the record with the given AtmId already exists
-  const checkIfExistsSQL = 'SELECT * FROM SiteDetail WHERE AtmId = ?';
-  connection.query(checkIfExistsSQL, [AtmId], (checkErr, checkResults) => {
+  const checkIfExistsSQL = 'SELECT * FROM SiteDetail WHERE AtmID = ?';
+  connection.query(checkIfExistsSQL, [AtmID], (checkErr, checkResults) => {
     if (checkErr) {
       console.error('Error checking if record exists in MySQL:', checkErr);
       return res.status(500).json({ message: 'Error checking if record exists in the database.' });
@@ -448,7 +448,7 @@ app.post('/addsite', verifyToken, (req, res) => {
         MseEmail = ?,
         MseContact = ?,
         Region = ?
-        WHERE AtmId = ?`;
+        WHERE AtmID = ?`;
 
       const updateValues = [
         BranchName,
@@ -471,7 +471,7 @@ app.post('/addsite', verifyToken, (req, res) => {
         MseEmail,
         MseContact,
         Region,
-        AtmId
+        AtmID
       ];
 
       connection.query(updateSQL, updateValues, (updateErr, updateResults) => {
@@ -485,7 +485,7 @@ app.post('/addsite', verifyToken, (req, res) => {
     } else {
       // If the record doesn't exist, insert a new one
       const insertSQL = `INSERT INTO SiteDetail(
-        AtmId,
+        AtmID,
         BranchName,
         Client,
         SubClient,
@@ -509,7 +509,7 @@ app.post('/addsite', verifyToken, (req, res) => {
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
       const insertValues = [
-        AtmId,
+        AtmID,
         BranchName,
         Client,
         SubClient,
