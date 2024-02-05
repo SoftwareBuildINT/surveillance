@@ -397,7 +397,7 @@ app.post('/addsite', verifyToken, (req, res) => {
   }
 
   const {
-    AtmID, BranchName, Client, SubClient,
+    AtmID, BranchName, Client, SubClient,SiteId,
     City,
     State,
     PanelMake,
