@@ -416,6 +416,7 @@ app.post('/addsite', verifyToken, (req, res) => {
     MseContact,
     Region
   } = req.body;
+  console.log(req.body)
 
   // Check if the record with the given AtmId already exists
   const checkIfExistsSQL = 'SELECT * FROM SiteDetail WHERE SiteId = ?';
@@ -448,7 +449,7 @@ app.post('/addsite', verifyToken, (req, res) => {
         MseEmail = ?,
         MseContact = ?,
         Region = ?
-        WHERE AtmId = ?`;
+        WHERE SiteId = ?`;
 
       const updateValues = [
         BranchName,
@@ -473,7 +474,7 @@ app.post('/addsite', verifyToken, (req, res) => {
         Region,
         AtmID
       ];
-
+      console.log(updateValues)
       connection.query(updateSQL, updateValues, (updateErr, updateResults) => {
         if (updateErr) {
           console.error('Error updating data in MySQL:', updateErr);
