@@ -416,17 +416,15 @@ app.post('/reset-password', async (req, res) => {
 });
 
 
-// ADD SITE
 app.post('/addsite', verifyToken, (req, res) => {
   // Check if the user has the required roles to perform this action
   const allowedRoles = ['Admin', 'super admin', 'User'];
-
-  if (!allowedRoles.includes(req.user_data.role)) {
-    return res.status(403).json({ error: 'Permission denied. Insufficient role.' });
-  }
-
   const {
-    AtmId, BranchName, Client, SubClient,
+    SiteId,
+    AtmID,
+    BranchName,
+    Client,
+    SubClient,
     City,
     State,
     PanelMake,
@@ -446,17 +444,30 @@ app.post('/addsite', verifyToken, (req, res) => {
     Region
   } = req.body;
 
-  // Check if the record with the given AtmId already exists
-  const checkIfExistsSQL = 'SELECT * FROM SiteDetail WHERE AtmId = ?';
-  connection.query(checkIfExistsSQL, [AtmId], (checkErr, checkResults) => {
+  if (!allowedRoles.includes(req.user_data.role)) {
+    return res.status(403).json({ error: 'Permission denied. Insufficient role.' });
+  }
+
+  // Validate required fields
+  // if (!SiteId || !AtmID || !BranchName || !Client || !SubClient || !City || !State ||
+  //   !PanelMake || !PanelType || !PanelMacId || !DvrMake || !Communication ||
+  //   !Latitude || !Longitude || !RouterIp || !PoliceContact || !HospitalContact ||
+  //   !FireBrigadeContact || !MseName || !MseEmail || !MseContact || !Region) {
+  //   return res.status(400).json({ error: 'All fields are required.' });
+  // }
+
+  // Check if the record with the given SiteId already exists
+  const checkIfExistsSQL = 'SELECT * FROM SiteDetail WHERE SiteId = ?';
+  connection.query(checkIfExistsSQL, [SiteId], (checkErr, checkResults) => {
     if (checkErr) {
       console.error('Error checking if record exists in MySQL:', checkErr);
-      return res.status(500).json({ message: 'Error checking if record exists in the database.' });
+      return res.status(500).json({ error: 'Error checking if record exists in the database.' });
     }
 
     if (checkResults.length > 0) {
       // If the record exists, update it
       const updateSQL = `UPDATE SiteDetail SET
+        AtmID = ?,
         BranchName = ?,
         Client = ?,
         SubClient = ?,
@@ -477,9 +488,10 @@ app.post('/addsite', verifyToken, (req, res) => {
         MseEmail = ?,
         MseContact = ?,
         Region = ?
-        WHERE AtmId = ?`;
+        WHERE SiteId = ?`;
 
       const updateValues = [
+        AtmID,
         BranchName,
         Client,
         SubClient,
@@ -500,13 +512,13 @@ app.post('/addsite', verifyToken, (req, res) => {
         MseEmail,
         MseContact,
         Region,
-        AtmId
+        SiteId
       ];
 
       connection.query(updateSQL, updateValues, (updateErr, updateResults) => {
         if (updateErr) {
           console.error('Error updating data in MySQL:', updateErr);
-          return res.status(500).json({ message: 'Error updating data in the database.' });
+          return res.status(500).json({ error: 'Error updating data in the database.' });
         }
 
         return res.json({ message: 'Item updated successfully' });
@@ -514,7 +526,8 @@ app.post('/addsite', verifyToken, (req, res) => {
     } else {
       // If the record doesn't exist, insert a new one
       const insertSQL = `INSERT INTO SiteDetail(
-        AtmId,
+        SiteId,
+        AtmID,
         BranchName,
         Client,
         SubClient,
@@ -535,10 +548,11 @@ app.post('/addsite', verifyToken, (req, res) => {
         MseEmail,
         MseContact,
         Region
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
       const insertValues = [
-        AtmId,
+        SiteId,
+        AtmID,
         BranchName,
         Client,
         SubClient,
@@ -564,7 +578,7 @@ app.post('/addsite', verifyToken, (req, res) => {
       connection.query(insertSQL, insertValues, (insertErr, insertResults) => {
         if (insertErr) {
           console.error('Error inserting data into MySQL:', insertErr);
-          return res.status(500).json({ message: 'Error inserting data into the database.' });
+          return res.status(500).json({ error: 'Error inserting data into the database.' });
         }
 
         return res.json({ message: 'Item added successfully' });
@@ -572,6 +586,7 @@ app.post('/addsite', verifyToken, (req, res) => {
     }
   });
 });
+
 
 //INCIDENT
 
