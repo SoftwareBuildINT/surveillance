@@ -815,6 +815,7 @@ app.get('/api/regions',verifyToken, (req, res) => {
   });
 });
 
+
 app.get('/api/states', verifyToken, (req, res) => {
   const allowedRoles = ['Admin', 'super admin','User'];
 
@@ -875,7 +876,7 @@ app.get('/api/cities',verifyToken, (req, res) => {
 app.get('/org/list', (req, res) => {
 
   connection.query(`
-  SELECT concat(MangFName,' ',MangLName) as OrgName,MangFName,MangLName,MangEmail, Mangcontact,SubClient,CreatedBy FROM Organization;
+  SELECT OrgId,OrgName, concat(MangFName,' ',MangLName) as MangName,MangEmail, Mangcontact,SubClient,CreatedBy FROM Organization WHERE IsActive = 1;
 `, (error, results) => {
     if (error) {
       console.error('Error retrieving Users details:', error);
@@ -934,6 +935,43 @@ app.post('/api/upload', upload.single('uploadImage'), (req, res) => {
     }
   });
 });
+
+app.post('/update-incident', (req, res) => {
+  // Call the stored procedure
+  connection.query('CALL UpdateAllIncidents()', (err, result) => {
+    if (err) {
+      console.error('Error updating incident details:', err);
+      res.status(500).send('Internal Server Error');
+    } else {
+      console.log('Incident details updated successfully');
+      res.status(200).send('Incident details updated successfully');
+    }
+  });
+});
+
+app.delete('/deleteclient/:OrgId', (req, res) => {
+  // Check if the user has the required roles to perform this action
+  
+  const OrgId = req.params.OrgId; // Retrieve siteId from URL parameters
+
+  const sql = 'DELETE FROM Organization WHERE OrgId = ?;'; // Use parameterized query
+
+  connection.query(sql, [OrgId], (err, results) => {
+    if (err) {
+      
+      console.error('Error deleting user from MySQL:', err);
+      return res.status(500).json({ message: 'Error deleting user from the database.' });
+    }
+
+    if (results.affectedRows === 0) {
+      return res.status(404).json({ message: 'User not found or already deleted.' });
+    }
+
+    // Respond with a success message
+    return res.json({ message: 'User deleted successfully' });
+  });
+});
+
 
 // Logout route
 app.post('/logout', (req, res) => {
