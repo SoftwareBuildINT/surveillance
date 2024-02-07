@@ -7,7 +7,11 @@ const jwt = require('jsonwebtoken');
 const app = express();
 const cors = require('cors');
 const bcrypt = require('bcrypt');
+const multer = require('multer');
+
 // const mysql = require('mysql2/promise');
+const storage = multer.memoryStorage(); // Store the image in memory
+const upload = multer({ storage: storage });
 
 
 app.use(express.static('public'));
@@ -868,6 +872,68 @@ app.get('/api/cities',verifyToken, (req, res) => {
   });
 });
 
+app.get('/org/list', (req, res) => {
+
+  connection.query(`
+  SELECT concat(MangFName,' ',MangLName) as OrgName,MangFName,MangLName,MangEmail, Mangcontact,SubClient,CreatedBy FROM Organization;
+`, (error, results) => {
+    if (error) {
+      console.error('Error retrieving Users details:', error);
+      res.status(500).json({ error: 'Internal server error' });
+      return;
+    }
+    res.json(results);
+  });
+});
+
+app.post('/api/upload', upload.single('uploadImage'), (req, res) => {
+  const {
+    OrgName,
+    SubClient,
+    MangFName,
+    MangLName,
+    Mangcontact,
+    MangEmail,
+ y,
+  } = req.body;
+
+  const imageBuffer = req.file ? req.file.buffer : null;
+
+  // Insert data into the MySQL database
+  const sql =
+    'INSERT INTO Organization (OrgName, SubClient, MangFName, MangLName, Mangcontact, MangEmail, image) VALUES ( ?, ?, ?, ?, ?, ?, ?)';
+  const values = [
+    OrgName,
+    SubClient,
+    MangFName,
+    MangLName,
+    Mangcontact,
+    MangEmail,
+
+    imageBuffer,
+  ];
+
+  connection.query(sql, values, (err, result) => {
+    if (err) {
+      console.error('Error inserting data into the database:', err);
+      res.status(500).json({ success: false, message: 'Internal server error' });
+    } else {
+      console.log('Data inserted into the database:', result);
+      res.json({
+        success: true,
+        message: 'Data received and inserted into the database successfully',
+        data: {
+          OrgName,
+          SubClient,
+          MangFName,
+          MangLName,
+          Mangcontact,
+          MangEmail
+        },
+      });
+    }
+  });
+});
 
 // Logout route
 app.post('/logout', (req, res) => {
