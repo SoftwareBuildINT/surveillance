@@ -972,6 +972,30 @@ app.delete('/deleteclient/:OrgId', (req, res) => {
   });
 });
 
+app.get('/api/latestpanel/data', (req, res) => {
+  // Use the pool to get a connection
+  connection.getConnection((err, connection) => {
+    if (err) {
+      console.error('Error connecting to database: ', err);
+      return res.status(500).json({ error: 'Internal Server Error' });
+    }
+
+    // Execute a query to fetch data from LatestData table
+    const query = 'SELECT * FROM LatestData';
+    connection.query(query, (error, results) => {
+      // Release the connection back to the pool
+      connection.release();
+
+      if (error) {
+        console.error('Error executing query: ', error);
+        return res.status(500).json({ error: 'Internal Server Error' });
+      }
+
+      // Send the fetched data as JSON response
+      res.json({ latest_data: results });
+    });
+  });
+});
 
 // Logout route
 app.post('/logout', (req, res) => {
