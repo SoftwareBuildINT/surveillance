@@ -14,11 +14,11 @@ const cors = require("cors");
 const bcrypt = require("bcrypt");
 
 // const mysql = require('mysql2/promise');
-app.use(express.static("public"));
-app.use(bodyParser.json());
 const storage = multer.memoryStorage(); // Store the image in memory
 const upload = multer({ storage: storage });
 
+app.use(express.static("public"));
+app.use(bodyParser.json());
 const corsOptions = {
   origin: "*",
   methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
@@ -38,10 +38,10 @@ app.use(express.json());
 // Connect to the MySQL database
 connection.getConnection((err) => {
   if (err) {
-    console.error("Error connecting to database:", err);
+    console.error("Error connecting to MySQL database: " + err.message);
     return;
   }
-  console.log("Connected to the database");
+  console.log("Connected to MySQL database");
 });
 const verifyToken = (req, res, next) => {
   const token = req.headers.authorization;
@@ -61,6 +61,207 @@ const verifyToken = (req, res, next) => {
     next();
   });
 };
+
+app.get("/profile", verifyToken, (req, res) => {
+  // Check if the user has the required roles to perform this action
+  const allowedRoles = ["Admin", "super admin", "User"];
+
+  if (
+    !req.user_data ||
+    !req.user_data.role ||
+    !allowedRoles.includes(req.user_data.role)
+  ) {
+    return res
+      .status(403)
+      .json({ error: "Permission denied. Insufficient role." });
+  }
+
+  // Continue with your existing logic to fetch profile from the database
+  const userId = req.user_data.Id;
+
+  console.log("User ID:", userId); // Log the user ID to check if it's correct
+
+  const query = `SELECT Id, CONCAT(FirstName, ' ', LastName) AS fullname, role FROM login WHERE Id = ?;`;
+
+  console.log("Query:", query); // Log the query string to check if it's correct
+
+  connection.query(query, [userId], (err, result) => {
+    if (err) {
+      console.error("Error fetching profile:", err);
+      res.status(500).json({ error: "Error fetching profile" });
+    } else {
+      console.log("Result:", result); // Log the result to check what's being returned
+      if (result.length > 0) {
+        const profile = result[0];
+        res.json(profile);
+      } else {
+        res.status(404).json({ error: "Profile not found" });
+      }
+    }
+  });
+});
+app.get("/checkStatus", (req, res) => {
+  connection.query(
+    "SELECT SiteDetail.AtmID, LatestData.PanelEvtDt FROM SiteDetail JOIN LatestData ON SiteDetail.AtmID = LatestData.AtmID",
+    (err, results) => {
+      if (err) {
+        console.error("Error querying database:", err);
+        res.status(500).json({ error: "Internal server error" });
+        return;
+      }
+
+      if (results.length > 0) {
+        const currentTime = new Date();
+        const fifteenMinutesInMillis = 15 * 60 * 1000;
+
+        const panelonlineCount = results.reduce((count, result) => {
+          const timeDifference = currentTime - result.PanelEvtDt;
+          const isOnline = timeDifference <= fifteenMinutesInMillis;
+          return count + (isOnline ? 1 : 0);
+        }, 0);
+
+        const panelofflineCount = results.length - panelonlineCount;
+
+        const atmStatusList = results.map((result) => {
+          const timeDifference = currentTime - result.PanelEvtDt;
+          const isOnline = timeDifference <= fifteenMinutesInMillis;
+          return {
+            AtmID: result.AtmID,
+            status: isOnline ? "online" : "offline",
+          };
+        });
+
+        const totalATMs = results.length;
+
+        res.json({ totalATMs, panelonlineCount, panelofflineCount });
+      } else {
+        res.status(404).json({ error: "Data not found" });
+      }
+    }
+  );
+});
+
+//user
+app.delete("/delete-user/:Id", verifyToken, (req, res) => {
+  // Check if the user has the required roles to perform this action
+  const allowedRoles = ["Admin", "super admin", "User"];
+
+  if (!allowedRoles.includes(req.user_data.role)) {
+    return res
+      .status(403)
+      .json({ error: "Permission denied. Insufficient role." });
+  }
+
+  const Id = req.params.Id; // Retrieve siteId from URL parameters
+  console.log(Id);
+
+  const sql = "DELETE FROM login WHERE Id = ?;"; // Use parameterized query
+
+  connection.query(sql, [Id], (err, results) => {
+    if (err) {
+      console.error("Error deleting user from MySQL:", err);
+      return res
+        .status(500)
+        .json({ message: "Error deleting user from the database." });
+    }
+
+    if (results.affectedRows === 0) {
+      return res
+        .status(404)
+        .json({ message: "User not found or already deleted." });
+    }
+
+    // Respond with a success message
+    return res.json({ message: "User deleted successfully" });
+  });
+});
+
+// side delete api
+app.delete("/delete-site/:siteId", verifyToken, (req, res) => {
+  // Check if the user has the required roles to perform this action
+  const allowedRoles = ["Admin", "super admin", "User"];
+
+  if (!allowedRoles.includes(req.user_data.role)) {
+    return res
+      .status(403)
+      .json({ error: "Permission denied. Insufficient role." });
+  }
+
+  const siteId = req.params.siteId; // Retrieve siteId from URL parameters
+  console.log(siteId);
+
+  // Define the SQL query to delete the site with the given ID
+  const sql = "DELETE FROM SiteDetail WHERE SiteId = ?;"; // Use parameterized query
+
+  // Execute the SQL query with the specified site ID
+  connection.query(sql, [siteId], (err, results) => {
+    if (err) {
+      console.error("Error deleting site from MySQL:", err);
+      return res
+        .status(500)
+        .json({ message: "Error deleting site from the database." });
+    }
+
+    // Check if any rows were affected (i.e., if the site was deleted)
+    if (results.affectedRows === 0) {
+      return res
+        .status(404)
+        .json({ message: "Site not found or already deleted." });
+    }
+
+    // Respond with a success message
+    return res.json({ message: "Site deleted successfully" });
+  });
+});
+
+app.post("/addUser", async (req, res) => {
+  const {
+    FirstName,
+    LastName,
+    EmailId,
+    password,
+    token,
+    expiration_time,
+    otp,
+    role,
+    Organization,
+    ContactNo,
+  } = req.body;
+
+  try {
+    // Hash the password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Insert user data into the database
+    connection.query(
+      `INSERT INTO login (FirstName,LastName,EmailId, password, token, expiration_time, otp, role, Organization,ContactNo) VALUES (?,?, ?, ?, ?, ?, ?, ?,?,?)`,
+      [
+        FirstName,
+        LastName,
+        EmailId,
+        hashedPassword,
+        token,
+        expiration_time,
+        otp,
+        role,
+        Organization,
+        ContactNo,
+      ],
+      function (err, result) {
+        if (err) {
+          console.error(err.message);
+          res.status(500).json({ error: "Failed to Add user." });
+        } else {
+          console.log(`User with email ${EmailId} registered successfully.`);
+          res.status(201).json({ message: "User registered successfully." });
+        }
+      }
+    );
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ error: "Failed to register user." });
+  }
+});
 
 app.post("/login", async (req, res) => {
   const { EmailId, password } = req.body;
@@ -293,184 +494,10 @@ app.post("/reset-password", async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
-app.get("/profile", verifyToken, (req, res) => {
+
+app.post("/addsite", verifyToken, (req, res) => {
   // Check if the user has the required roles to perform this action
   const allowedRoles = ["Admin", "super admin", "User"];
-
-  if (
-    !req.user_data ||
-    !req.user_data.role ||
-    !allowedRoles.includes(req.user_data.role)
-  ) {
-    return res
-      .status(403)
-      .json({ error: "Permission denied. Insufficient role." });
-  }
-
-  // Continue with your existing logic to fetch profile from the database
-  const userId = req.user_data.Id;
-
-  console.log("User ID:", userId); // Log the user ID to check if it's correct
-
-  const query = `SELECT Id, CONCAT(FirstName, ' ', LastName) AS fullname, role FROM login WHERE Id = ?;`;
-
-  console.log("Query:", query); // Log the query string to check if it's correct
-
-  connection.query(query, [userId], (err, result) => {
-    if (err) {
-      console.error("Error fetching profile:", err);
-      res.status(500).json({ error: "Error fetching profile" });
-    } else {
-      console.log("Result:", result); // Log the result to check what's being returned
-      if (result.length > 0) {
-        const profile = result[0];
-        res.json(profile);
-      } else {
-        res.status(404).json({ error: "Profile not found" });
-      }
-    }
-  });
-});
-
-app.delete("/delete-user/:Id", verifyToken, (req, res) => {
-  // Check if the user has the required roles to perform this action
-  const allowedRoles = ["Admin", "super admin", "User"];
-
-  if (!allowedRoles.includes(req.user_data.role)) {
-    return res
-      .status(403)
-      .json({ error: "Permission denied. Insufficient role." });
-  }
-
-  const Id = req.params.Id; // Retrieve siteId from URL parameters
-  console.log(Id);
-
-  const sql = "DELETE FROM login WHERE Id = ?;"; // Use parameterized query
-
-  connection.query(sql, [Id], (err, results) => {
-    if (err) {
-      console.error("Error deleting user from MySQL:", err);
-      return res
-        .status(500)
-        .json({ message: "Error deleting user from the database." });
-    }
-
-    if (results.affectedRows === 0) {
-      return res
-        .status(404)
-        .json({ message: "User not found or already deleted." });
-    }
-
-    // Respond with a success message
-    return res.json({ message: "User deleted successfully" });
-  });
-});
-
-// Logout route
-app.post("/logout", (req, res) => {
-  // Clear the JWT token from the client-side storage
-  res.clearCookie("token"); // Assuming the JWT token is stored in a cookie named 'jwtToken'
-
-  // Respond with a success message
-  res.status(200).json({ message: "Logout successful" });
-});
-
-// side delete api
-app.delete("/delete-site/:siteId", verifyToken, (req, res) => {
-  // Check if the user has the required roles to perform this action
-  const allowedRoles = ["Admin", "super admin", "User"];
-
-  if (!allowedRoles.includes(req.user_data.role)) {
-    return res
-      .status(403)
-      .json({ error: "Permission denied. Insufficient role." });
-  }
-
-  const siteId = req.params.siteId; // Retrieve siteId from URL parameters
-  console.log(siteId);
-
-  // Define the SQL query to delete the site with the given ID
-  const sql = "DELETE FROM SiteDetail WHERE SiteId = ?;"; // Use parameterized query
-
-  // Execute the SQL query with the specified site ID
-  connection.query(sql, [siteId], (err, results) => {
-    if (err) {
-      console.error("Error deleting site from MySQL:", err);
-      return res
-        .status(500)
-        .json({ message: "Error deleting site from the database." });
-    }
-
-    // Check if any rows were affected (i.e., if the site was deleted)
-    if (results.affectedRows === 0) {
-      return res
-        .status(404)
-        .json({ message: "Site not found or already deleted." });
-    }
-
-    // Respond with a success message
-    return res.json({ message: "Site deleted successfully" });
-  });
-});
-
-app.post("/addUser", async (req, res) => {
-  const {
-    FirstName,
-    LastName,
-    EmailId,
-    password,
-    token,
-    expiration_time,
-    otp,
-    role,
-    Organization,
-    ContactNo,
-  } = req.body;
-
-  try {
-    // Hash the password
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Insert user data into the database
-    connection.query(
-      `INSERT INTO login (FirstName,LastName,EmailId, password, token, expiration_time, otp, role, Organization,ContactNo) VALUES (?,?, ?, ?, ?, ?, ?, ?,?,?)`,
-      [
-        FirstName,
-        LastName,
-        EmailId,
-        hashedPassword,
-        token,
-        expiration_time,
-        otp,
-        role,
-        Organization,
-        ContactNo,
-      ],
-      function (err, result) {
-        if (err) {
-          console.error(err.message);
-          res.status(500).json({ error: "Failed to Add user." });
-        } else {
-          console.log(`User with email ${EmailId} registered successfully.`);
-          res.status(201).json({ message: "User registered successfully." });
-        }
-      }
-    );
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).json({ error: "Failed to register user." });
-  }
-});
-
-// ADD SITE
-app.post("/addsite", (req, res) => {
-  // Check if the user has the required roles to perform this action
-  // const allowedRoles = ['Admin', 'super admin', 'User'];
-
-  // if (!allowedRoles.includes(req.user_data.role)) {
-  //   return res.status(403).json({ error: 'Permission denied. Insufficient role.' });
-  // }
-
   const {
     SiteId,
     AtmID,
@@ -496,54 +523,78 @@ app.post("/addsite", (req, res) => {
     Region,
   } = req.body;
 
-  // Check if the record with the given AtmID already exists
+  if (!allowedRoles.includes(req.user_data.role)) {
+    return res
+      .status(403)
+      .json({ error: "Permission denied. Insufficient role." });
+  }
+
+  // Validate required fields
+  // if (!SiteId || !AtmID || !BranchName || !Client || !SubClient || !City || !State ||
+  //   !PanelMake || !PanelType || !PanelMacId || !DvrMake || !Communication ||
+  //   !Latitude || !Longitude || !RouterIp || !PoliceContact || !HospitalContact ||
+  //   !FireBrigadeContact || !MseName || !MseEmail || !MseContact || !Region) {
+  //   return res.status(400).json({ error: 'All fields are required.' });
+  // }
+
+  // Check if the record with the given SiteId already exists
   const checkIfExistsSQL = "SELECT * FROM SiteDetail WHERE SiteId = ?";
   connection.query(checkIfExistsSQL, [SiteId], (checkErr, checkResults) => {
     if (checkErr) {
       console.error("Error checking if record exists in MySQL:", checkErr);
       return res
         .status(500)
-        .json({ message: "Error checking if record exists in the database." });
+        .json({ error: "Error checking if record exists in the database." });
     }
 
     if (checkResults.length > 0) {
       // If the record exists, update it
-      const updateSQL = `UPDATE SiteDetail SET BranchName = ?, Region = ?, State = ?, City = ?, PanelMake = ?, PanelType = ?, PanelMacId = ?, Latitude = ?,
-        Longitude = ?,
-        MseName = ?,
-        MseContact = ?,
-        MseEmail = ?,
-        RouterIp = ?,
+      const updateSQL = `UPDATE SiteDetail SET
+        AtmID = ?,
+        BranchName = ?,
         Client = ?,
         SubClient = ?,
+        City = ?,
+        State = ?,
+        PanelMake = ?,
+        PanelType = ?,
+        PanelMacId = ?,
         DvrMake = ?,
         Communication = ?,
+        Latitude = ?,
+        Longitude = ?,
+        RouterIp = ?,
         PoliceContact = ?,
         HospitalContact = ?,
-        FireBrigadeContact = ?
+        FireBrigadeContact = ?,
+        MseName = ?,
+        MseEmail = ?,
+        MseContact = ?,
+        Region = ?
         WHERE SiteId = ?`;
 
       const updateValues = [
+        AtmID,
         BranchName,
-        Region,
-        State,
+        Client,
+        SubClient,
         City,
+        State,
         PanelMake,
         PanelType,
         PanelMacId,
-        Latitude,
-        Longitude,
-        MseName,
-        MseContact,
-        MseEmail,
-        RouterIp,
-        Client,
-        SubClient,
         DvrMake,
         Communication,
+        Latitude,
+        Longitude,
+        RouterIp,
         PoliceContact,
         HospitalContact,
         FireBrigadeContact,
+        MseName,
+        MseEmail,
+        MseContact,
+        Region,
         SiteId,
       ];
 
@@ -552,7 +603,7 @@ app.post("/addsite", (req, res) => {
           console.error("Error updating data in MySQL:", updateErr);
           return res
             .status(500)
-            .json({ message: "Error updating data in the database." });
+            .json({ error: "Error updating data in the database." });
         }
 
         return res.json({ message: "Item updated successfully" });
@@ -560,6 +611,7 @@ app.post("/addsite", (req, res) => {
     } else {
       // If the record doesn't exist, insert a new one
       const insertSQL = `INSERT INTO SiteDetail(
+        SiteId,
         AtmID,
         BranchName,
         Client,
@@ -581,9 +633,10 @@ app.post("/addsite", (req, res) => {
         MseEmail,
         MseContact,
         Region
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
       const insertValues = [
+        SiteId,
         AtmID,
         BranchName,
         Client,
@@ -612,7 +665,7 @@ app.post("/addsite", (req, res) => {
           console.error("Error inserting data into MySQL:", insertErr);
           return res
             .status(500)
-            .json({ message: "Error inserting data into the database." });
+            .json({ error: "Error inserting data into the database." });
         }
 
         return res.json({ message: "Item added successfully" });
@@ -621,35 +674,7 @@ app.post("/addsite", (req, res) => {
   });
 });
 
-app.get("/site-list/:SiteId?", (req, res) => {
-  const SiteId = req.params.SiteId;
-  console.log(SiteId);
-
-  // const allowedRoles = ['Admin', 'super admin', 'User'];
-
-  // if (!allowedRoles.includes(req.user_data.role)) {
-  //   return res.status(403).json({ error: 'Permission denied. Insufficient role.' });
-  // }
-
-  // Use parameterized queries to prevent SQL injection
-  let sql =
-    "SELECT SiteDetail.SiteId, City.CityId, City.CityName, State.StateId, State.StateName, Region.RegionName FROM SiteDetail JOIN City ON SiteDetail.City = City.CityId JOIN State ON SiteDetail.State = State.StateId JOIN Region ON SiteDetail.Region = Region.RegionId";
-
-  // Add WHERE clause only if SiteId is provided
-  if (SiteId) {
-    sql += " WHERE SiteDetail.SiteId = ?";
-  }
-
-  connection.query(sql, [SiteId], (err, results) => {
-    if (err) {
-      console.error("Error executing MySQL query: " + err.stack);
-      res.status(500).json({ error: "Internal Server Error" });
-      return;
-    }
-
-    res.json(results);
-  });
-});
+//INCIDENT
 
 app.post("/incident", verifyToken, (req, res) => {
   // Check if the user has the required roles to perform this action
@@ -664,7 +689,7 @@ app.post("/incident", verifyToken, (req, res) => {
     Incidentno,
     Client,
     SubClient,
-    AtmID,
+    AtmId,
     SiteName,
     IncidentName,
     OpenTime,
@@ -672,14 +697,14 @@ app.post("/incident", verifyToken, (req, res) => {
 
   // Insert form data into the MySQL database
   const sql = `INSERT INTO SiteDetail(
-    Incidentno,Client,SubClient,AtmID,SiteName,IncidentName,OpenTime
+    Incidentno,Client,SubClient,AtmId,SiteName,IncidentName,OpenTime
   ) VALUES (?, ?, ?, ?, ?, ?, ?)`;
 
   const values = [
     Incidentno,
     Client,
     SubClient,
-    AtmID,
+    AtmId,
     SiteName,
     IncidentName,
     OpenTime,
@@ -753,27 +778,41 @@ app.get("/get-incident", verifyToken, (req, res) => {
   );
 });
 
-app.get("/get-client", verifyToken, (req, res) => {
-  const allowedRoles = ["Admin", "super admin", "User"];
+// Define your API endpoint
+app.get("/site-list", (req, res) => {
+  // const allowedRoles = ['Admin', 'super admin','User'];
 
-  if (!allowedRoles.includes(req.user_data.role)) {
-    return res
-      .status(403)
-      .json({ error: "Permission denied. Insufficient role." });
+  // if (!allowedRoles.includes(req.user_data.role)) {
+  //   return res.status(403).json({ error: 'Permission denied. Insufficient role.' });
+  // }
+  const SiteId = req.query.SiteId;
+
+  // Use parameterized queries to prevent SQL injection
+  let sql = `SELECT * FROM serveillance.SiteDetail AS ss 
+	LEFT JOIN serveillance.Region AS re ON (ss.Region = re.RegionId) 
+	LEFT JOIN serveillance.State AS st ON(ss.State = st.StateId)
+    LEFT JOIN serveillance.City AS ci ON (ss.City = ci.CityId);`;
+  let values = [];
+
+  if (SiteId) {
+    sql = `SELECT * FROM serveillance.SiteDetail AS ss 
+    LEFT JOIN serveillance.Region AS re ON (ss.Region = re.RegionId) 
+    LEFT JOIN serveillance.State AS st ON(ss.State = st.StateId)
+    LEFT JOIN serveillance.City AS ci ON (ss.City = ci.CityId)
+    WHERE SiteId = ?`;
+
+    values = [SiteId];
   }
-  connection.query(
-    `
-  SELECT distinct(client) FROM IncidentDetail
-`,
-    (error, results) => {
-      if (error) {
-        console.error("Error retrieving site details:", error);
-        res.status(500).json({ error: "Internal server error" });
-        return;
-      }
-      res.json(results);
+
+  connection.query(sql, values, (err, results) => {
+    if (err) {
+      console.error("Error executing MySQL query: " + err.stack);
+      res.status(500).json({ error: "Internal Server Error" });
+      return;
     }
-  );
+
+    res.json(results);
+  });
 });
 
 app.get("/total-location", verifyToken, (req, res) => {
@@ -940,7 +979,6 @@ app.get("/api/cities", verifyToken, (req, res) => {
     sql = "SELECT CityId, CityName FROM City WHERE StateId = ?";
     values = [stateId];
   }
-  console.log(values);
 
   connection.query(sql, values, (err, results) => {
     if (err) {
@@ -951,6 +989,22 @@ app.get("/api/cities", verifyToken, (req, res) => {
 
     res.json(results);
   });
+});
+
+app.get("/org/list", (req, res) => {
+  connection.query(
+    `
+  SELECT OrgId,OrgName, concat(MangFName,' ',MangLName) as MangName,MangEmail, Mangcontact,SubClient,CreatedBy FROM Organization WHERE IsActive = 1;
+`,
+    (error, results) => {
+      if (error) {
+        console.error("Error retrieving Users details:", error);
+        res.status(500).json({ error: "Internal server error" });
+        return;
+      }
+      res.json(results);
+    }
+  );
 });
 
 app.post("/api/upload", upload.single("uploadImage"), (req, res) => {
@@ -1004,61 +1058,20 @@ app.post("/api/upload", upload.single("uploadImage"), (req, res) => {
   });
 });
 
-app.get("/checkStatus", (req, res) => {
-  connection.query(
-    "SELECT SiteDetail.AtmID, LatestData.PanelEvtDt FROM SiteDetail LEFT JOIN LatestData ON SiteDetail.AtmID = LatestData.AtmID",
-    (err, results) => {
-      if (err) {
-        console.error("Error querying database:", err);
-        res.status(500).json({ error: "Internal server error" });
-        return;
-      }
-
-      const currentTime = new Date();
-      const fifteenMinutesInMillis = 15 * 60 * 1000;
-
-      const panelonlineCount = results.reduce((count, result) => {
-        const timeDifference = result.PanelEvtDt
-          ? currentTime - result.PanelEvtDt
-          : fifteenMinutesInMillis + 1;
-        const isOnline = timeDifference <= fifteenMinutesInMillis;
-        return count + (isOnline ? 1 : 0);
-      }, 0);
-
-      const panelofflineCount = results.length - panelonlineCount;
-
-      const atmStatusList = results.map((result) => {
-        const timeDifference = result.PanelEvtDt
-          ? currentTime - result.PanelEvtDt
-          : fifteenMinutesInMillis + 1;
-        const isOnline = timeDifference <= fifteenMinutesInMillis;
-        return { AtmID: result.AtmID, status: isOnline ? "online" : "offline" };
-      });
-
-      const totalATMs = results.length;
-
-      res.json({ totalATMs, panelonlineCount, panelofflineCount });
+app.post("/update-incident", (req, res) => {
+  // Call the stored procedure
+  connection.query("CALL UpdateAllIncidents()", (err, result) => {
+    if (err) {
+      console.error("Error updating incident details:", err);
+      res.status(500).send("Internal Server Error");
+    } else {
+      console.log("Incident details updated successfully");
+      res.status(200).send("Incident details updated successfully");
     }
-  );
+  });
 });
 
-app.get("/org/list", (req, res) => {
-  connection.query(
-    `
-  SELECT OrgId,OrgName, concat(MangFName,' ',MangLName) as MangName ,MangEmail, Mangcontact,SubClient,CreatedBy FROM Organization where IsActive = 1;
-`,
-    (error, results) => {
-      if (error) {
-        console.error("Error retrieving Users details:", error);
-        res.status(500).json({ error: "Internal server error" });
-        return;
-      }
-      res.json(results);
-    }
-  );
-});
-
-app.delete("/deletecilent/:OrgId", (req, res) => {
+app.delete("/deleteclient/:OrgId", (req, res) => {
   // Check if the user has the required roles to perform this action
 
   const OrgId = req.params.OrgId; // Retrieve siteId from URL parameters
@@ -1084,31 +1097,6 @@ app.delete("/deletecilent/:OrgId", (req, res) => {
   });
 });
 
-app.get("/api/latestpanel/data", (req, res) => {
-  // Use the pool to get a connection
-  connection.getConnection((err, connection) => {
-    if (err) {
-      console.error("Error connecting to database: ", err);
-      return res.status(500).json({ error: "Internal Server Error" });
-    }
-
-    // Execute a query to fetch data from LatestData table
-    const query =
-      "SELECT * FROM LatestData AS ld JOIN SiteDetail AS sd ON (ld.SiteId = sd.SiteId);";
-    connection.query(query, (error, results) => {
-      // Release the connection back to the pool
-      connection.release();
-
-      if (error) {
-        console.error("Error executing query: ", error);
-        return res.status(500).json({ error: "Internal Server Error" });
-      }
-
-      // Send the fetched data as JSON response
-      res.json({ latest_data: results });
-    });
-  });
-});
 
 app.get("/get-client", verifyToken, (req, res) => {
   const allowedRoles = ["Admin", "super admin", "User"];
@@ -1140,6 +1128,31 @@ app.post("/logout", (req, res) => {
 
   // Respond with a success message
   res.status(200).json({ message: "Logout successful" });
+});
+
+app.get("/api/latestpanel/data", (req, res) => {
+  // Use the pool to get a connection
+  connection.getConnection((err, connection) => {
+    if (err) {
+      console.error("Error connecting to database: ", err);
+      return res.status(500).json({ error: "Internal Server Error" });
+    }
+
+    // Execute a query to fetch data from LatestData table
+    const query = "SELECT * FROM LatestData AS ld JOIN SiteDetail AS sd ON (ld.SiteId = sd.SiteId);";
+    connection.query(query, (error, results) => {
+      // Release the connection back to the pool
+      connection.release();
+
+      if (error) {
+        console.error("Error executing query: ", error);
+        return res.status(500).json({ error: "Internal Server Error" });
+      }
+
+      // Send the fetched data as JSON response
+      res.json({ latest_data: results });
+    });
+  });
 });
 
 function test(data) {
