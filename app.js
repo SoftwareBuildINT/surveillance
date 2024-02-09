@@ -1,14 +1,18 @@
 const express = require('express');
 const mysql = require('mysql2');
+const moment = require('moment-timezone');
+const net = require('net');
 const randomstring = require('randomstring');
 const nodemailer = require('nodemailer');
 const bodyParser = require('body-parser');
 const jwt = require('jsonwebtoken');
 const app = express();
+const { error } = require('console');
 const multer = require('multer');
 const path = require('path');
 const cors = require('cors');
 const bcrypt = require('bcrypt');
+
 // const mysql = require('mysql2/promise');
 app.use(express.static('public'));
 app.use(bodyParser.json());
@@ -941,93 +945,203 @@ app.delete('/deletecilent/:OrgId', (req, res) => {
   });
 });
 
-//Incident Uodate procedure 
-app.post('/update-incident', (req, res) => {
-  // Call the stored procedure
-  connection.query('CALL UpdateAllIncidents()', (err, result) => {
+app.get('/api/latestpanel/data', (req, res) => {
+  // Use the pool to get a connection
+  connection.getConnection((err, connection) => {
     if (err) {
-      console.error('Error updating incident details:', err);
-      res.status(500).send('Internal Server Error');
-    } else {
-      console.log('Incident details updated successfully');
-      res.status(200).send('Incident details updated successfully');
+      console.error('Error connecting to database: ', err);
+      return res.status(500).json({ error: 'Internal Server Error' });
     }
+
+    // Execute a query to fetch data from LatestData table
+    const query = 'SELECT * FROM LatestData';
+    connection.query(query, (error, results) => {
+      // Release the connection back to the pool
+      connection.release();
+
+      if (error) {
+        console.error('Error executing query: ', error);
+        return res.status(500).json({ error: 'Internal Server Error' });
+      }
+
+      // Send the fetched data as JSON response
+      res.json({ latest_data: results });
+    });
   });
 });
+
+app.get('/get-client', verifyToken, (req, res) => {
+  const allowedRoles = ['Admin', 'super admin', 'User'];
+
+  if (!allowedRoles.includes(req.user_data.role)) {
+    return res.status(403).json({ error: 'Permission denied. Insufficient role.' });
+  }
+  connection.query(`
+  SELECT distinct(client) FROM IncidentDetail
+`, (error, results) => {
+    if (error) {
+      console.error('Error retrieving site details:', error);
+      res.status(500).json({ error: 'Internal server error' });
+      return;
+    }
+    res.json(results);
+  });
+});
+
+// Logout route
+app.post('/logout', (req, res) => {
+  // Clear the JWT token from the client-side storage
+  res.clearCookie('token'); // Assuming the JWT token is stored in a cookie named 'jwtToken'
+
+  // Respond with a success message
+  res.status(200).json({ message: 'Logout successful' });
+});
+
+
+
+app.get('/api/latestpanel/data', (req, res) => {
+  // Use the pool to get a connection
+  connection.getConnection((err, connection) => {
+    if (err) {
+      console.error('Error connecting to database: ', err);
+      return res.status(500).json({ error: 'Internal Server Error' });
+    }
+
+    // Execute a query to fetch data from LatestData table
+    const query = 'SELECT * FROM LatestData';
+    connection.query(query, (error, results) => {
+      // Release the connection back to the pool
+      connection.release();
+
+      if (error) {
+        console.error('Error executing query: ', error);
+        return res.status(500).json({ error: 'Internal Server Error' });
+      }
+
+      // Send the fetched data as JSON response
+      res.json({ latest_data: results });
+    });
+  });
+});
+
+
+function test(data) {
+  try {
+    var PanelMacId = data.split(',')[5]
+    var hh = data.split(',')[7].substring(0, 2)
+    var mm = data.split(',')[7].substring(2, 4)
+    var ss = data.split(',')[7].substring(4, 6)
+    var dd = data.split(',')[8].substring(0, 2)
+    var MM = data.split(',')[8].substring(2, 4)
+    var yy = data.split(',')[8].substring(4, 6)
+    var panelTimeUTC = new Date('20' + yy + '-' + MM + '-' + dd + ' ' + hh + ':' + mm + ':' + ss)
+    var formattedDate = moment(panelTimeUTC).format('YYYY-MM-DD HH:mm:ss');
+    var macid = data.split(',')[9]
+    var z = []
+    for(var j = 0; j < 32; j++){
+      z[j] = data.split(',')[10].split('!')[j];
+    }
+    let istDate = new Date().toLocaleString('en-US', {timeZone: 'Asia/Kolkata'});
+
+    connection.query(`select SiteId from SiteDetail where PanelMacId = '${macid}'`, (err, result) => {
+      if (err) {
+        console.log(err)
+      } else {
+        console.log(result);
+        if (result[0]) {
+          var SiteId = result[0]['SiteId']
+          connection.query(`update LatestData set macid = '${macid}', zone1_status = '${z[0]}', zone2_status = '${z[1]}', zone3_status = '${z[2]}', zone4_status = '${z[3]}', zone5_status = '${z[4]}', zone6_status = '${z[5]}', zone7_status = '${z[6]}', zone8_status = '${z[7]}', zone9_status = '${z[8]}', zone10_status = '${z[9]}', zone11_status = '${z[10]}', zone12_status = '${z[11]}', zone13_status = '${z[12]}', zone14_status = '${z[13]}', zone15_status = '${z[14]}', zone16_status = '${z[15]}', zone17_status = '${z[16]}', zone18_status = '${z[17]}', zone19_status = '${z[18]}', zone20_status = '${z[19]}', zone21_status = '${z[20]}', zone22_status = '${z[21]}', zone23_status = '${z[22]}', zone24_status = '${z[23]}', zone25_status = '${z[24]}', zone26_status = '${z[25]}', zone27_status = '${z[26]}', zone28_status = '${z[27]}', zone29_status = '${z[28]}', zone30_status = '${z[29]}', zone31_status = '${z[30]}', zone32_status = '${z[31]}', panel_evt_dt = '${formattedDate}', ist_evt_dt = '${moment(istDate).format("YYYY-MM-DD HH:mm:ss")}' where SiteId = '${SiteId}'`, (err, result) => {
+            if (err) {
+              console.log(err);
+            } else {
+              console.log(result);
+            }
+          });
+          connection.query(`SELECT trans.zone1_Astatus, trans.zone2_Astatus, trans.zone3_Astatus, trans.zone4_Astatus, trans.zone5_Astatus,
+              trans.zone6_Astatus, trans.zone7_Astatus, trans.zone8_Astatus, trans.zone9_Astatus, trans.zone10_Astatus,
+               trans.zone11_Astatus, trans.zone12_Astatus, trans.zone13_Astatus, trans.zone14_Astatus, trans.zone15_Astatus,
+                trans.zone16_Astatus, trans.zone17_Astatus, trans.zone18_Astatus, trans.zone19_Astatus, trans.zone20_Astatus, 
+                trans.zone21_Astatus, trans.zone22_Astatus, trans.zone23_Astatus, trans.zone24_Astatus, trans.zone25_Astatus, 
+                trans.zone26_Astatus, trans.zone27_Astatus, trans.zone28_Astatus, trans.zone29_Astatus, trans.zone30_Astatus,trans.zone31_Astatus,
+                trans.zone32_Astatus FROM SiteDetail AS mst JOIN LatestData AS trans ON mst.SiteId = trans.SiteId WHERE mst.SiteId = '${SiteId}'`, (err, zoneresult) => {
+            if (err) {
+              console.log(err)
+            } else {
+              if (zoneresult[0]) {
+                for (var i = 0; i < 32; i++) {
+                  var zoneNum = i + 1;
+                  var zoneE = zoneresult[0][`zone${zoneNum}_e`]
+                  var zoneAStatusTimeValue = zoneresult[0][`zone${zoneNum}_Astatus`]
+                  if(zoneAStatusTimeValue){
+                    var zoneAStatusTime = zoneresult[0][`zone${zoneNum}_Astatus`].split(',')
+                    var zoneAStatus = zoneAStatusTime[0]
+                  } else {
+                    var zoneAStatus = null
+                  }
+                  if (zoneE == 1) {
+                    if ((zoneAStatus == null || zoneAStatus == 3) && z[i] == (zoneNum > 9 ? `${zoneNum}RA` : `0${zoneNum}RA`)) {
+                      connection.query(`update LatestData set zone${zoneNum}_Astatus = "1,${formattedDate},${moment(istDate).format("YYYY-MM-DD HH:mm:ss")}" where SiteId = '${SiteId}'`, (err, updateResult) => {
+                        if (err) {
+                          console.log(err);
+                        }
+                      });
+                    }
+                    else if ((zoneAStatus == 1 || zoneAStatus == null) && z[i] == (zoneNum > 9 ? `${zoneNum}AA` : `0${zoneNum}AA`)) {
+                      connection.query(`update LatestData set zone${zoneNum}_Astatus = "2,${formattedDate},${moment(istDate).format("YYYY-MM-DD HH:mm:ss")}" where SiteId = '${SiteId}'`, (err, updateResult) => {
+                        if (err) {
+                          console.log(err);
+                        }
+                      });
+                    }
+                  }
+                }
+              }
+            }
+          });
+        }
+      }
+    });
+  } catch (err) {
+    console.log(err);
+  }
+}
+const server = net.createServer((socket) => {
+  console.log('Client connected');
+  socket.write(`$1lv,4,\n`);
+  socket.on('data', (data) => {
+    var str = data.toString();
+    var cstr = str.split(',');
+    console.log(`Received data from client ${data}`);
+    if (cstr[0] == '#1I') {
+      try{
+        alerts(str);
+        socket.write(`$1lv,4,\n`);
+        socket.write(`$1lB,16,1,cstr[23],\n`);
+      } catch (error) {
+        console.log(error)
+      }
+    }
+    else if (cstr[0] == '#1v') {
+        test(str)
+    }
+    else {
+      try{
+      socket.write(`$1lv,4,\n`)
+      }catch(error){
+        console.log(error)
+      }
+    }
+  });
+  socket.on('end', () => {
+    console.log('Client disconnected');
+  });
+
+});
+
 
 app.listen(3328, () => {
   console.log('Server is running on port 3328');
 });
-
-
-// AWS.config.update({
-//   accessKeyId: 'YOUR_ACCESS_KEY',
-//   secretAccessKey: 'YOUR_SECRET_KEY',
-//   region: 'YOUR_REGION',
-// });
-
-// const s3 = new AWS.S3();
-
-// // Set up multer and multer-s3 for file uploads
-// const upload = multer({
-//   storage: multerS3({
-//     s3: s3,
-//     bucket: 'YOUR_S3_BUCKET_NAME',
-//     acl: 'public-read',
-//     key: function (req, file, cb) {
-//       cb(null, 'uploads/' + Date.now() + '-' + file.originalname);
-//     },
-//   }),
-// });
-
-// // app.post('/api/upload', upload.single('uploadImage'), (req, res) => {
-// //   const {
-// //     OrgName,
-// //     SubClient,
-// //     MangFName,
-// //     MangLName,
-// //     Mangcontact,
-// //     MangEmail,
-// //   } = req.body;
-
-// //   // Get the S3 URL of the uploaded image
-// //   const imageUrl = req.file.location;
-
-// //   // Insert data into the MySQL database
-// //   const sql =
-// //     'INSERT INTO Organization (OrgName, SubClient, MangFName, MangLName, Mangcontact, MangEmail, image) VALUES (?, ?, ?, ?, ?, ?, ?)';
-// //   const values = [
-// //     OrgName,
-// //     SubClient,
-// //     MangFName,
-// //     MangLName,
-// //     Mangcontact,
-// //     MangEmail,
-// //     imageUrl, // Use the S3 URL instead of imageBuffer
-// //   ];
-
-// //   connection.query(sql, values, (err, result) => {
-// //     if (err) {
-// //       console.error('Error inserting data into the database:', err);
-// //       res.status(500).json({ success: false, message: 'Internal server error' });
-// //     } else {
-// //       console.log('Data inserted into the database:', result);
-// //       res.json({
-// //         success: true,
-// //         message: 'Data received and inserted into the database successfully',
-// //         data: {
-// //           OrgName,
-// //           SubClient,
-// //           MangFName,
-// //           MangLName,
-// //           Mangcontact,
-// //           MangEmail,
-// //           imageUrl,
-// //         },
-// //       });
-// //     }
-// //   });
-// // });
-
-
-
+server.listen(5501, () => {
+  console.log('Server started on port 5501');
+});
