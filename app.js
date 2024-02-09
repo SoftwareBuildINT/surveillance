@@ -1097,6 +1097,61 @@ app.delete("/deleteclient/:OrgId", (req, res) => {
   });
 });
 
+app.get("/total-panel", verifyToken, (req, res) => {
+  const allowedRoles = ["Admin", "super admin", "User"];
+
+  if (!allowedRoles.includes(req.user_data.role)) {
+    return res
+      .status(403)
+      .json({ error: "Permission denied. Insufficient role." });
+  }
+
+  connection.query(
+    `
+    SELECT
+    SUM(CASE WHEN Status = 1 THEN 1 ELSE 0 END) AS active,
+    SUM(CASE WHEN Status = 0 THEN 1 ELSE 0 END) AS not_active
+    FROM
+    SiteDetail;
+`,
+    (error, results) => {
+      if (error) {
+        console.error("Error retrieving total number of Panel Count:", error);
+        res.status(500).json({ error: "Internal server error" });
+        return;
+      }
+      const panelCount = results[0].panelCount;
+      res.json({ panelCount });
+    }
+  );
+});
+
+app.get("/panel-status", verifyToken, (req, res) => {
+  // const allowedRoles = ["Admin", "super admin", "User"];
+
+  // if (!allowedRoles.includes(req.user_data.role)) {
+  //   return res
+  //     .status(403)
+  //     .json({ error: "Permission denied. Insufficient role." });
+  // }
+  connection.query(
+    `
+    SELECT
+    SUM(CASE WHEN Status = 1 THEN 1 ELSE 0 END) AS active,
+    SUM(CASE WHEN Status = 2 THEN 1 ELSE 0 END) AS not_active
+    FROM
+    SiteDetail;
+`,
+    (error, results) => {
+      if (error) {
+        console.error("Error retrieving site details:", error);
+        res.status(500).json({ error: "Internal server error" });
+        return;
+      }
+      res.json(results);
+    }
+  );
+});
 
 app.get("/get-client", verifyToken, (req, res) => {
   const allowedRoles = ["Admin", "super admin", "User"];
@@ -1139,7 +1194,8 @@ app.get("/api/latestpanel/data", (req, res) => {
     }
 
     // Execute a query to fetch data from LatestData table
-    const query = "SELECT * FROM LatestData AS ld JOIN SiteDetail AS sd ON (ld.SiteId = sd.SiteId);";
+    const query =
+      "SELECT * FROM LatestData AS ld JOIN SiteDetail AS sd ON (ld.SiteId = sd.SiteId);";
     connection.query(query, (error, results) => {
       // Release the connection back to the pool
       connection.release();
