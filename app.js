@@ -1126,7 +1126,6 @@ app.get("/total-panel", verifyToken, (req, res) => {
   );
 });
 
-
 // Get client information
 app.get("/get-client", verifyToken, (req, res) => {
   const allowedRoles = ["Admin", "super admin", "User"];
@@ -1137,9 +1136,7 @@ app.get("/get-client", verifyToken, (req, res) => {
       .json({ error: "Permission denied. Insufficient role." });
   }
   connection.query(
-    `
-  SELECT distinct(client) FROM IncidentDetail
-`,
+    `SELECT distinct(OrgName) as client FROM Organization;`,
     (error, results) => {
       if (error) {
         console.error("Error retrieving site details:", error);
@@ -1161,8 +1158,7 @@ app.get("/get-subClient", verifyToken, (req, res) => {
       .json({ error: "Permission denied. Insufficient role." });
   }
   connection.query(
-    `
-    SELECT distinct(SubClient) FROM IncidentDetail;`,
+    `SELECT distinct(SubClient) FROM Organization;`,
     (error, results) => {
       if (error) {
         console.error("Error retrieving site details:", error);
