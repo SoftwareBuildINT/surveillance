@@ -1170,6 +1170,50 @@ app.get("/get-subClient", verifyToken, (req, res) => {
   );
 });
 
+// Get Panel Make information
+app.get("/get-panelMake", verifyToken, (req, res) => {
+  const allowedRoles = ["Admin", "super admin", "User"];
+
+  if (!allowedRoles.includes(req.user_data.role)) {
+    return res
+      .status(403)
+      .json({ error: "Permission denied. Insufficient role." });
+  }
+  connection.query(
+    `SELECT PanelMakeId, PanelMakeName FROM serveillance.PanelMake;`,
+    (error, results) => {
+      if (error) {
+        console.error("Error retrieving site details:", error);
+        res.status(500).json({ error: "Internal server error" });
+        return;
+      }
+      res.json(results);
+    }
+  );
+});
+
+// Get Panel Type information
+app.get("/get-panelType", verifyToken, (req, res) => {
+  const allowedRoles = ["Admin", "super admin", "User"];
+
+  if (!allowedRoles.includes(req.user_data.role)) {
+    return res
+      .status(403)
+      .json({ error: "Permission denied. Insufficient role." });
+  }
+  connection.query(
+    `SELECT PanelTypeId, PanelTypeName, PanelMakeId FROM serveillance.PanelType;`,
+    (error, results) => {
+      if (error) {
+        console.error("Error retrieving site details:", error);
+        res.status(500).json({ error: "Internal server error" });
+        return;
+      }
+      res.json(results);
+    }
+  );
+});
+
 // Logout route
 app.post("/logout", (req, res) => {
   // Clear the JWT token from the client-side storage
