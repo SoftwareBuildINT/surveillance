@@ -102,7 +102,7 @@ app.get("/profile", verifyToken, (req, res) => {
 });
 app.get("/checkStatus", (req, res) => {
   connection.query(
-    "SELECT SiteDetail.AtmID, LatestData.PanelEvtDt FROM SiteDetail JOIN LatestData ON SiteDetail.AtmID = LatestData.AtmID",
+    "SELECT SiteDetail.AtmID, LatestData.ist_evt_dt FROM SiteDetail JOIN LatestData ON SiteDetail.SiteId = LatestData.SiteId;",
     (err, results) => {
       if (err) {
         console.error("Error querying database:", err);
@@ -115,7 +115,7 @@ app.get("/checkStatus", (req, res) => {
         const fifteenMinutesInMillis = 15 * 60 * 1000;
 
         const panelonlineCount = results.reduce((count, result) => {
-          const timeDifference = currentTime - result.PanelEvtDt;
+          const timeDifference = currentTime - result.ist_evt_dt;
           const isOnline = timeDifference <= fifteenMinutesInMillis;
           return count + (isOnline ? 1 : 0);
         }, 0);
@@ -123,7 +123,7 @@ app.get("/checkStatus", (req, res) => {
         const panelofflineCount = results.length - panelonlineCount;
 
         const atmStatusList = results.map((result) => {
-          const timeDifference = currentTime - result.PanelEvtDt;
+          const timeDifference = currentTime - result.ist_evt_dt;
           const isOnline = timeDifference <= fifteenMinutesInMillis;
           return {
             AtmID: result.AtmID,
