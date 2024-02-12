@@ -1302,7 +1302,7 @@ app.get("/get-panelType", verifyToken, (req, res) => {
       .json({ error: "Permission denied. Insufficient role." });
   }
   connection.query(
-    `SELECT distinct(SubClient) FROM Organization;`,
+    `SELECT PanelTypeId, PanelTypeName FROM PanelType;`,
     (error, results) => {
       if (error) {
         console.error("Error retrieving site details:", error);
