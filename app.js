@@ -497,9 +497,9 @@ app.post("/reset-password", async (req, res) => {
 
 // Assuming you have a database connection named 'connection'
 
-app.post('/addsite', verifyToken, (req, res) => {
+app.post("/addsite", verifyToken, (req, res) => {
   // Check if the user has the required roles to perform this action
-  const allowedRoles = ['Admin', 'super admin', 'User'];
+  const allowedRoles = ["Admin", "super admin", "User"];
   const {
     SiteId,
     AtmID,
@@ -522,18 +522,22 @@ app.post('/addsite', verifyToken, (req, res) => {
     MseName,
     MseEmail,
     MseContact,
-    Region
+    Region,
   } = req.body;
 
   if (!allowedRoles.includes(req.user_data.role)) {
-    return res.status(403).json({ error: 'Permission denied. Insufficient role.' });
+    return res
+      .status(403)
+      .json({ error: "Permission denied. Insufficient role." });
   }
 
-  const checkIfExistsSQL = 'SELECT * FROM SiteDetail WHERE SiteId = ?';
+  const checkIfExistsSQL = "SELECT * FROM SiteDetail WHERE SiteId = ?";
   connection.query(checkIfExistsSQL, [SiteId], (checkErr, checkResults) => {
     if (checkErr) {
-      console.error('Error checking if record exists in MySQL:', checkErr);
-      return res.status(500).json({ error: 'Error checking if record exists in the database.' });
+      console.error("Error checking if record exists in MySQL:", checkErr);
+      return res
+        .status(500)
+        .json({ error: "Error checking if record exists in the database." });
     }
 
     if (checkResults.length > 0) {
@@ -584,16 +588,18 @@ app.post('/addsite', verifyToken, (req, res) => {
         MseEmail,
         MseContact,
         Region,
-        SiteId
+        SiteId,
       ];
 
       connection.query(updateSQL, updateValues, (updateErr, updateResults) => {
         if (updateErr) {
-          console.error('Error updating data in MySQL:', updateErr);
-          return res.status(500).json({ error: 'Error updating data in the database.' });
+          console.error("Error updating data in MySQL:", updateErr);
+          return res
+            .status(500)
+            .json({ error: "Error updating data in the database." });
         }
 
-        return res.json({ message: 'Item updated successfully' });
+        return res.json({ message: "Item updated successfully" });
       });
     } else {
       // If the record doesn't exist, insert a new one
@@ -644,28 +650,36 @@ app.post('/addsite', verifyToken, (req, res) => {
         MseName,
         MseEmail,
         MseContact,
-        Region
+        Region,
       ];
 
       connection.query(insertSQL, insertValues, (insertErr, insertResults) => {
         if (insertErr) {
-          console.error('Error inserting data into MySQL:', insertErr);
-          return res.status(500).json({ error: 'Error inserting data into the database.' });
+          console.error("Error inserting data into MySQL:", insertErr);
+          return res
+            .status(500)
+            .json({ error: "Error inserting data into the database." });
         }
         const insertedSiteId = insertResults.insertId;
-        console.log(insertedSiteId)
+        console.log(insertedSiteId);
 
         // Logic to update zone1_name and zone2_name from PanelType table if PanelType matches
-        const panelTypeSQL = 'SELECT * FROM PanelType WHERE PanelTypeName = ?';
-        connection.query(panelTypeSQL, [PanelType], (panelTypeErr, panelTypeResults) => {
-          if (panelTypeErr) {
-            console.error('Error retrieving PanelType from MySQL:', panelTypeErr);
-            // Handle error if necessary
-          }
-          console.log(panelTypeResults)
-          if (panelTypeResults.length > 0) {
-            // Update zone1_name and zone2_name in SiteDetail table
-            const updateZoneSQL = `UPDATE SiteDetail SET
+        const panelTypeSQL = "SELECT * FROM PanelType WHERE PanelTypeName = ?";
+        connection.query(
+          panelTypeSQL,
+          [PanelType],
+          (panelTypeErr, panelTypeResults) => {
+            if (panelTypeErr) {
+              console.error(
+                "Error retrieving PanelType from MySQL:",
+                panelTypeErr
+              );
+              // Handle error if necessary
+            }
+            console.log(panelTypeResults);
+            if (panelTypeResults.length > 0) {
+              // Update zone1_name and zone2_name in SiteDetail table
+              const updateZoneSQL = `UPDATE SiteDetail SET
             zone1_name = ?,
             zone2_name = ?,
             zone3_name = ?,
@@ -700,53 +714,61 @@ app.post('/addsite', verifyToken, (req, res) => {
             zone32_name = ?
         WHERE SiteId = ?`;
 
-            const updateZoneValues = [
-              panelTypeResults[0].zone1_name,
-              panelTypeResults[0].zone2_name,
-              panelTypeResults[0].zone3_name,
-              panelTypeResults[0].zone4_name,
-              panelTypeResults[0].zone5_name,
-              panelTypeResults[0].zone6_name,
-              panelTypeResults[0].zone7_name,
-              panelTypeResults[0].zone8_name,
-              panelTypeResults[0].zone9_name,
-              panelTypeResults[0].zone10_name,
-              panelTypeResults[0].zone11_name,
-              panelTypeResults[0].zone12_name,
-              panelTypeResults[0].zone13_name,
-              panelTypeResults[0].zone14_name,
-              panelTypeResults[0].zone15_name,
-              panelTypeResults[0].zone16_name,
-              panelTypeResults[0].zone17_name,
-              panelTypeResults[0].zone18_name,
-              panelTypeResults[0].zone19_name,
-              panelTypeResults[0].zone20_name,
-              panelTypeResults[0].zone21_name,
-              panelTypeResults[0].zone22_name,
-              panelTypeResults[0].zone23_name,
-              panelTypeResults[0].zone24_name,
-              panelTypeResults[0].zone25_name,
-              panelTypeResults[0].zone26_name,
-              panelTypeResults[0].zone27_name,
-              panelTypeResults[0].zone28_name,
-              panelTypeResults[0].zone29_name,
-              panelTypeResults[0].zone30_name,
-              panelTypeResults[0].zone31_name,
-              panelTypeResults[0].zone32_name,
-              insertedSiteId
-            ];
-            console.log(updateZoneValues)
+              const updateZoneValues = [
+                panelTypeResults[0].zone1_name,
+                panelTypeResults[0].zone2_name,
+                panelTypeResults[0].zone3_name,
+                panelTypeResults[0].zone4_name,
+                panelTypeResults[0].zone5_name,
+                panelTypeResults[0].zone6_name,
+                panelTypeResults[0].zone7_name,
+                panelTypeResults[0].zone8_name,
+                panelTypeResults[0].zone9_name,
+                panelTypeResults[0].zone10_name,
+                panelTypeResults[0].zone11_name,
+                panelTypeResults[0].zone12_name,
+                panelTypeResults[0].zone13_name,
+                panelTypeResults[0].zone14_name,
+                panelTypeResults[0].zone15_name,
+                panelTypeResults[0].zone16_name,
+                panelTypeResults[0].zone17_name,
+                panelTypeResults[0].zone18_name,
+                panelTypeResults[0].zone19_name,
+                panelTypeResults[0].zone20_name,
+                panelTypeResults[0].zone21_name,
+                panelTypeResults[0].zone22_name,
+                panelTypeResults[0].zone23_name,
+                panelTypeResults[0].zone24_name,
+                panelTypeResults[0].zone25_name,
+                panelTypeResults[0].zone26_name,
+                panelTypeResults[0].zone27_name,
+                panelTypeResults[0].zone28_name,
+                panelTypeResults[0].zone29_name,
+                panelTypeResults[0].zone30_name,
+                panelTypeResults[0].zone31_name,
+                panelTypeResults[0].zone32_name,
+                insertedSiteId,
+              ];
+              console.log(updateZoneValues);
 
-            connection.query(updateZoneSQL, updateZoneValues, (updateZoneErr, updateZoneResults) => {
-              if (updateZoneErr) {
-                console.error('Error updating zone names in MySQL:', updateZoneErr);
-                // Handle error if necessary
-              }
-            });
+              connection.query(
+                updateZoneSQL,
+                updateZoneValues,
+                (updateZoneErr, updateZoneResults) => {
+                  if (updateZoneErr) {
+                    console.error(
+                      "Error updating zone names in MySQL:",
+                      updateZoneErr
+                    );
+                    // Handle error if necessary
+                  }
+                }
+              );
+            }
           }
-        });
+        );
 
-        return res.json({ message: 'Item added successfully' });
+        return res.json({ message: "Item added successfully" });
       });
     }
   });
@@ -1497,19 +1519,19 @@ function test(data) {
                   else {
                     connection.query(
                       `INSERT INTO LatestData (macid, SiteId, AtmID, zone1_status, zone2_status, zone3_status, zone4_status, zone5_status, zone6_status, zone7_status, zone8_status, zone9_status, zone10_status, zone11_status, zone12_status, zone13_status, zone14_status, zone15_status, zone16_status, zone17_status, zone18_status, zone19_status, zone20_status, zone21_status, zone22_status, zone23_status, zone24_status, zone25_status, zone26_status, zone27_status, zone28_status, zone29_status, zone30_status, zone31_status, zone32_status, panel_evt_dt, ist_evt_dt) 
-                      VALUES ('${macid}', '${SiteId}', '${AtmID}' '${z[0]}', '${
-                        z[1]
-                      }', '${z[2]}', '${z[3]}', '${z[4]}','${z[5]}','${
-                        z[6]
-                      }','${z[7]}','${z[8]}','${z[9]}','${z[10]}','${z[11]}','${
-                        z[12]
-                      }','${z[13]}','${z[14]}','${z[15]}','${z[16]}','${
-                        z[17]
-                      }', '${z[18]}','${z[19]}','${z[20]}','${z[21]}','${
-                        z[22]
-                      }','${z[23]}','${z[24]}','${z[25]}','${z[26]}','${
-                        z[27]
-                      }','${z[28]}','${z[29]}','${z[30]}','${
+                      VALUES ('${macid}', '${SiteId}', '${AtmID}', '${
+                        z[0]
+                      }', '${z[1]}', '${z[2]}', '${z[3]}', '${z[4]}','${
+                        z[5]
+                      }','${z[6]}','${z[7]}','${z[8]}','${z[9]}','${z[10]}','${
+                        z[11]
+                      }','${z[12]}','${z[13]}','${z[14]}','${z[15]}','${
+                        z[16]
+                      }','${z[17]}', '${z[18]}','${z[19]}','${z[20]}','${
+                        z[21]
+                      }','${z[22]}','${z[23]}','${z[24]}','${z[25]}','${
+                        z[26]
+                      }','${z[27]}','${z[28]}','${z[29]}','${z[30]}','${
                         z[31]
                       }', '${formattedDate}', '${moment(istDate).format(
                         "YYYY-MM-DD HH:mm:ss"
