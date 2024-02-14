@@ -1138,7 +1138,7 @@ app.get("/org/list", (req, res) => {
   let values = [];
 
   if (OrgId) {
-    sql = `SELECT OrgId,OrgName, concat(MangFName,' ',MangLName) as MangName,MangEmail, Mangcontact,SubClient,CreatedBy FROM Organization WHERE IsActive = 1 AND OrgId =?`;
+    sql = `SELECT OrgId,OrgName, MangFName, MangLName, concat(MangFName,' ',MangLName) as MangName,MangEmail, Mangcontact,SubClient,CreatedBy FROM Organization WHERE IsActive = 1 AND OrgId =?`;
     values = [OrgId];
   }
 
