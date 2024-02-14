@@ -1134,7 +1134,7 @@ app.get("/api/cities", verifyToken, (req, res) => {
 
 app.get("/org/list", (req, res) => {
   const OrgId = req.query.OrgId;
-  let sql = `SELECT OrgId,OrgName, concat(MangFName,' ',MangLName) as MangName,MangEmail, Mangcontact,SubClient,CreatedBy FROM Organization WHERE IsActive = 1;`;
+  let sql = `SELECT OrgId,OrgName, MangFName, MangLName, concat(MangFName,' ',MangLName) as MangName,MangEmail, Mangcontact,SubClient,CreatedBy FROM Organization WHERE IsActive = 1;`;
   let values = [];
 
   if (OrgId) {
