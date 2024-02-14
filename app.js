@@ -216,13 +216,11 @@ app.delete("/delete-site/:siteId", verifyToken, (req, res) => {
 
 app.post("/addUser", async (req, res) => {
   const {
+    Id,
     FirstName,
     LastName,
     EmailId,
     password,
-    token,
-    expiration_time,
-    otp,
     role,
     Organization,
     ContactNo,
@@ -232,28 +230,68 @@ app.post("/addUser", async (req, res) => {
     // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Insert user data into the database
+    // Check if user data already exists in the database
     connection.query(
-      `INSERT INTO login (FirstName,LastName,EmailId, password, token, expiration_time, otp, role, Organization,ContactNo) VALUES (?,?, ?, ?, ?, ?, ?, ?,?,?)`,
-      [
-        FirstName,
-        LastName,
-        EmailId,
-        hashedPassword,
-        token,
-        expiration_time,
-        otp,
-        role,
-        Organization,
-        ContactNo,
-      ],
-      function (err, result) {
+      `SELECT * FROM login WHERE EmailId = ?`,
+      [EmailId],
+      async function (err, rows) {
         if (err) {
           console.error(err.message);
-          res.status(500).json({ error: "Failed to Add user." });
+          res.status(500).json({ error: "Failed to add user." });
+          return;
+        }
+
+        if (rows.length > 0) {
+          // User already exists, update the data
+          connection.query(
+            `UPDATE login SET FirstName = ?, LastName = ?, EmailId = ?, password = ?, role = ?, Organization = ?, ContactNo = ? WHERE Id = ?`,
+            [
+              FirstName,
+              LastName,
+              EmailId,
+              password,
+              role,
+              Organization,
+              ContactNo,
+              Id,
+            ],
+            function (err, result) {
+              if (err) {
+                console.error(err.message);
+                res.status(500).json({ error: "Failed to update user." });
+              } else {
+                console.log(`User with email ${EmailId} updated successfully.`);
+                res.status(200).json({ message: "User updated successfully." });
+              }
+            }
+          );
         } else {
-          console.log(`User with email ${EmailId} registered successfully.`);
-          res.status(201).json({ message: "User registered successfully." });
+          // User does not exist, insert the data
+          connection.query(
+            `INSERT INTO login (FirstName, LastName, EmailId, password, role, Organization, ContactNo) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              FirstName,
+              LastName,
+              EmailId,
+              hashedPassword,
+              role,
+              Organization,
+              ContactNo,
+            ],
+            function (err, result) {
+              if (err) {
+                console.error(err.message);
+                res.status(500).json({ error: "Failed to add user." });
+              } else {
+                console.log(
+                  `User with email ${EmailId} registered successfully.`
+                );
+                res
+                  .status(201)
+                  .json({ message: "User registered successfully." });
+              }
+            }
+          );
         }
       }
     );
@@ -994,14 +1032,13 @@ app.get("/user-list", (req, res) => {
     values = [Id];
   }
   connection.query(sql, values, (error, results) => {
-      if (error) {
-        console.error("Error retrieving Users details:", error);
-        res.status(500).json({ error: "Internal server error" });
-        return;
-      }
-      res.json(results);
+    if (error) {
+      console.error("Error retrieving Users details:", error);
+      res.status(500).json({ error: "Internal server error" });
+      return;
     }
-  );
+    res.json(results);
+  });
 });
 
 app.get("/api/regions", verifyToken, (req, res) => {
@@ -1117,53 +1154,94 @@ app.get("/org/list", (req, res) => {
 
 app.post("/api/upload", upload.single("uploadImage"), (req, res) => {
   const {
+    OrgId,
     OrgName,
     SubClient,
     MangFName,
     MangLName,
     Mangcontact,
     MangEmail,
-    y,
   } = req.body;
 
   const imageBuffer = req.file ? req.file.buffer : null;
 
-  // Insert data into the MySQL database
-  const sql =
-    "INSERT INTO Organization (OrgName, SubClient, MangFName, MangLName, Mangcontact, MangEmail, image) VALUES ( ?, ?, ?, ?, ?, ?, ?)";
-  const values = [
-    OrgName,
-    SubClient,
-    MangFName,
-    MangLName,
-    Mangcontact,
-    MangEmail,
+  // Check if OrgId is provided to determine if it's an UPDATE or INSERT request
+  if (OrgId) {
+    // UPDATE request
+    const sql =
+      "UPDATE Organization SET OrgName = ?, SubClient = ?, MangFName = ?, MangLName = ?, Mangcontact = ?, MangEmail = ?, image = ? WHERE OrgId = ?";
+    const values = [
+      OrgName,
+      SubClient,
+      MangFName,
+      MangLName,
+      Mangcontact,
+      MangEmail,
+      imageBuffer,
+      OrgId,
+    ];
 
-    imageBuffer,
-  ];
+    connection.query(sql, values, (err, result) => {
+      if (err) {
+        console.error("Error updating data in the database:", err);
+        res
+          .status(500)
+          .json({ success: false, message: "Internal server error" });
+      } else {
+        console.log("Data updated in the database:", result);
+        res.json({
+          success: true,
+          message: "Data updated in the database successfully",
+          data: {
+            OrgId,
+            OrgName,
+            SubClient,
+            MangFName,
+            MangLName,
+            Mangcontact,
+            MangEmail,
+          },
+        });
+      }
+    });
+  } else {
+    // INSERT request
+    const sql =
+      "INSERT INTO Organization (OrgName, SubClient, MangFName, MangLName, Mangcontact, MangEmail, image) VALUES (?, ?, ?, ?, ?, ?, ?)";
+    const values = [
+      OrgName,
+      SubClient,
+      MangFName,
+      MangLName,
+      Mangcontact,
+      MangEmail,
+      imageBuffer,
+    ];
 
-  connection.query(sql, values, (err, result) => {
-    if (err) {
-      console.error("Error inserting data into the database:", err);
-      res
-        .status(500)
-        .json({ success: false, message: "Internal server error" });
-    } else {
-      console.log("Data inserted into the database:", result);
-      res.json({
-        success: true,
-        message: "Data received and inserted into the database successfully",
-        data: {
-          OrgName,
-          SubClient,
-          MangFName,
-          MangLName,
-          Mangcontact,
-          MangEmail,
-        },
-      });
-    }
-  });
+    connection.query(sql, values, (err, result) => {
+      if (err) {
+        console.error("Error inserting data into the database:", err);
+        res
+          .status(500)
+          .json({ success: false, message: "Internal server error" });
+      } else {
+        console.log("Data inserted into the database:", result);
+        res.json({
+          success: true,
+          message: "Data received and inserted into the database successfully",
+          data: {
+            OrgId: result.insertId,
+            OrgName,
+            SubClient,
+            MangFName,
+            MangLName,
+            Mangcontact,
+            MangEmail,
+          },
+        });
+      }
+    });
+  }
 });
 
 app.post("/update-incident", (req, res) => {
