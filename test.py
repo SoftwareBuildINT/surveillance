@@ -3,7 +3,7 @@
 import socket
 import random
 
-HOST = "10.30.100.83"  # The server's hostname or IP address
+HOST = "10.30.100.68"  # The server's hostname or IP address
 PORT = 5501
 
 # while(True):

@@ -1647,9 +1647,9 @@ const server = net.createServer((socket) => {
     console.log(`Received data from client ${data}`);
     if (cstr[0] == "#1I") {
       try {
-        alerts(str);
+        // alerts(str);
         socket.write(`$1lv,4,\n`);
-        socket.write(`$1lB,16,1,cstr[23],\n`);
+        // socket.write(`$1lB,16,1,cstr[23],\n`);
       } catch (error) {
         console.log(error);
       }
