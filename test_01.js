@@ -985,15 +985,11 @@ app.get("/total-router", verifyToken, (req, res) => {
 });
 
 app.get("/user-list", (req, res) => {
-  const Id = req.query.Id;
-  let sql = `SELECT Id,concat(FirstName,' ',LastName) as user_name,FirstName,LastName,EmailId, ContactNo,role,Organization, created_at  FROM login;`;
-  let values = [];
-
-  if (Id) {
-    sql = `SELECT Id,concat(FirstName,' ',LastName) as user_name,FirstName,LastName,EmailId, ContactNo,role,Organization, created_at FROM login WHERE Id = ?;`;
-    values = [Id];
-  }
-  connection.query(sql, values, (error, results) => {
+  connection.query(
+    `
+  SELECT Id,concat(FirstName,' ',LastName) as user_name,FirstName,LastName,EmailId, ContactNo,role,Organization, created_at  FROM login;
+`,
+    (error, results) => {
       if (error) {
         console.error("Error retrieving Users details:", error);
         res.status(500).json({ error: "Internal server error" });
