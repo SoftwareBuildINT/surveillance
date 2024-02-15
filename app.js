@@ -1485,7 +1485,7 @@ app.get("/get-subClient", verifyToken, (req, res) => {
 });
 
 //incident page modal
-app.post("/update-incident/:incidentNo", verifyToken, async (req, res) => {
+app.post("/update-incidentmodal/:incidentNo", verifyToken, async (req, res) => {
   try {
     // Extract parameters from request
     const { incidentNo } = req.params;
@@ -1889,6 +1889,95 @@ function test(data) {
     console.log(err);
   }
 }
+
+
+function alerts(data) {
+  try {
+    var values = data.split(',')
+    var macid = data.split(',')[7]
+    var hh = values[19].substring(0, 2)
+    var mm = values[19].substring(2, 4)
+    var ss = values[19].substring(4, 6)
+    var dd = values[20].substring(0, 2)
+    var MM = values[20].substring(2, 4)
+    var yy = values[20].substring(4, 6)
+    var panelTimeUTC = new Date('20' + yy + '-' + MM + '-' + dd + ' ' + hh + ':' + mm + ':' + ss)
+    let istDate = new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
+    var eventCode = values[26].slice(0, 3);
+    try {
+      const queryEventCode = `SELECT event_code, description, alerts_status, alert_check FROM event_codes WHERE event_code LIKE '${eventCode}%'`;
+      connection.query(queryEventCode, (error, result) => {
+        if (error) {
+          console.log(error);
+        } else {
+          console.log(result);
+          if (result.length == 1 && result[0]['alerts_status'] == 1 && result[0]['alert_check'] == 1) {
+            var description = result[0].description
+            connection.query(`SELECT AtmID, BranchName, Client, SubClient, zone${parseInt(values[26].slice(-2))}_name, zone${parseInt(values[26].slice(-2))}_alert_enable FROM SiteDetail WHERE PanelMacId = '${macid}'`, (siteDetailsError, siteDetailsResult) => {
+              if (siteDetailsError) {
+                console.log(siteDetailsError);
+              }
+              if (siteDetailsResult[0]) {
+                if (parseInt((siteDetailsResult[0][`zone${parseInt(values[26].slice(-2))}_alert_enable`]).split(',')[0]) == 1) {
+                  var IncidentName = siteDetailsResult[0][`zone${parseInt(values[26].slice(-2))}_name`] + ' ' + description;
+                  connection.query(`insert into IncidentDetail (AtmID, SiteName, Client, SubClient, IncidentName, IstTimeStamp, PanelTimeStamp, AlertType) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, [siteDetailsResult[0].AtmID, siteDetailsResult[0].BranchName, siteDetailsResult[0].Client, siteDetailsResult[0].SubClient, IncidentName, moment(istDate).format("YYYY-MM-DD HH:mm:ss"), moment(panelTimeUTC).format('YYYY-MM-DD HH:mm:ss'), parseInt((siteDetailsResult[0][`zone${parseInt(values[26].slice(-2))}_alert_enable`]).split(',')[1])], (IncidentDetailError, IncidentDetailResult) => {
+                    if (IncidentDetailError) {
+                      console.log(IncidentDetailError);
+                    } else {
+                      console.log(IncidentDetailResult);
+                    }
+                  });
+                }
+              }
+            });
+          } else if (result.length == 1 && result[0]['alerts_status'] == 1 && result[0]['alert_check'] == 0) {
+            var description = result[0].description
+            connection.query(`SELECT AtmID, BranchName, Client, SubClient FROM SiteDetail WHERE PanelMacId = '${macid}'`, (siteDetailsError, siteDetailsResult) => {
+              if (siteDetailsError) {
+                console.log(siteDetailsError);
+              }
+              if (siteDetailsResult[0]) {
+                var IncidentName = description;
+                connection.query(`insert into IncidentDetail (AtmID, SiteName, Client, SubClient, IncidentName, IstTimeStamp, PanelTimeStamp, AlertType) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, [siteDetailsResult[0].AtmID, siteDetailsResult[0].BranchName, siteDetailsResult[0].Client, siteDetailsResult[0].SubClient, IncidentName, moment(istDate).format("YYYY-MM-DD HH:mm:ss"), moment(panelTimeUTC).format('YYYY-MM-DD HH:mm:ss'), 3], (IncidentDetailError, IncidentDetailResult) => {
+                  if (IncidentDetailError) {
+                    console.log(IncidentDetailError);
+                  } else {
+                    console.log(IncidentDetailResult);
+                  }
+                });
+              }
+            });
+          } else if (result.length > 1) {
+            for (i = 0; i < result.length; i++) {
+              if (result[i].event_code == values[26] && result[i].alerts_status == 1 && result[i].alert_check == 0) {
+                var description = result[i].description;
+                connection.query(`SELECT AtmID, BranchName, Client, SubClient FROM SiteDetail WHERE PanelMacId = '${macid}'`, (siteDetailsError, siteDetailsResult) => {
+                  if (siteDetailsError) {
+                    console.log(siteDetailsError);
+                  }
+                  if (siteDetailsResult[0]) {
+                    var IncidentName = description;
+                    connection.query(`insert into IncidentDetail (AtmID, SiteName, Client, SubClient, IncidentName, IstTimeStamp, PanelTimeStamp, AlertType) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, [siteDetailsResult[0].AtmID, siteDetailsResult[0].BranchName, siteDetailsResult[0].Client, siteDetailsResult[0].SubClient, IncidentName, moment(istDate).format("YYYY-MM-DD HH:mm:ss"), moment(panelTimeUTC).format('YYYY-MM-DD HH:mm:ss'), 3], (IncidentDetailError, IncidentDetailResult) => {
+                      if (IncidentDetailError) {
+                        console.log(IncidentDetailError);
+                      }
+                    });
+                  }
+                });
+              }
+            }
+          }
+        }
+      });
+    }
+    catch (err) {
+      console.log(err);
+    }
+  } catch (err) {
+    console.log(err);
+  }
+}
+
 const server = net.createServer((socket) => {
   console.log("Client connected");
   socket.write(`$1lv,4,\n`);
@@ -1898,9 +1987,9 @@ const server = net.createServer((socket) => {
     console.log(`Received data from client ${data}`);
     if (cstr[0] == "#1I") {
       try {
-        // alerts(str);
+        alerts(str);
         socket.write(`$1lv,4,\n`);
-        // socket.write(`$1lB,16,1,cstr[23],\n`);
+        socket.write(`$1lB,16,1,cstr[23],\n`);
       } catch (error) {
         console.log(error);
       }
