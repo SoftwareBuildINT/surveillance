@@ -811,7 +811,39 @@ app.post("/addsite", verifyToken, (req, res) => {
             zone29_name = ?,
             zone30_name = ?,
             zone31_name = ?,
-            zone32_name = ?
+            zone32_name = ?,
+            zone1_alert_enable = ?,
+            zone2_alert_enable = ?,
+            zone3_alert_enable = ?,
+            zone4_alert_enable = ?,
+            zone5_alert_enable = ?,
+            zone6_alert_enable = ?,
+            zone7_alert_enable = ?,
+            zone8_alert_enable = ?,
+            zone9_alert_enable = ?,
+            zone10_alert_enable = ?,
+            zone11_alert_enable = ?,
+            zone12_alert_enable = ?,
+            zone13_alert_enable = ?,
+            zone14_alert_enable = ?,
+            zone15_alert_enable = ?,
+            zone16_alert_enable = ?,
+            zone17_alert_enable = ?,
+            zone18_alert_enable = ?,
+            zone19_alert_enable = ?,
+            zone20_alert_enable = ?,
+            zone21_alert_enable = ?,
+            zone22_alert_enable = ?,
+            zone23_alert_enable = ?,
+            zone24_alert_enable = ?,
+            zone25_alert_enable = ?,
+            zone26_alert_enable = ?,
+            zone27_alert_enable = ?,
+            zone28_alert_enable = ?,
+            zone29_alert_enable = ?,
+            zone30_alert_enable = ?,
+            zone31_alert_enable = ?,
+            zone32_alert_enable = ?
         WHERE SiteId = ?`;
 
               const updateZoneValues = [
@@ -847,7 +879,39 @@ app.post("/addsite", verifyToken, (req, res) => {
                 panelTypeResults[0].zone30_name,
                 panelTypeResults[0].zone31_name,
                 panelTypeResults[0].zone32_name,
-                insertedSiteId,
+                panelTypeResults[0].zone1_alert_enable,
+                panelTypeResults[0].zone2_alert_enable,
+                panelTypeResults[0].zone3_alert_enable,
+                panelTypeResults[0].zone4_alert_enable,
+                panelTypeResults[0].zone5_alert_enable,
+                panelTypeResults[0].zone6_alert_enable,
+                panelTypeResults[0].zone7_alert_enable,
+                panelTypeResults[0].zone8_alert_enable,
+                panelTypeResults[0].zone9_alert_enable,
+                panelTypeResults[0].zone10_alert_enable,
+                panelTypeResults[0].zone11_alert_enable,
+                panelTypeResults[0].zone12_alert_enable,
+                panelTypeResults[0].zone13_alert_enable,
+                panelTypeResults[0].zone14_alert_enable,
+                panelTypeResults[0].zone15_alert_enable,
+                panelTypeResults[0].zone16_alert_enable,
+                panelTypeResults[0].zone17_alert_enable,
+                panelTypeResults[0].zone18_alert_enable,
+                panelTypeResults[0].zone19_alert_enable,
+                panelTypeResults[0].zone20_alert_enable,
+                panelTypeResults[0].zone21_alert_enable,
+                panelTypeResults[0].zone22_alert_enable,
+                panelTypeResults[0].zone23_alert_enable,
+                panelTypeResults[0].zone24_alert_enable,
+                panelTypeResults[0].zone25_alert_enable,
+                panelTypeResults[0].zone26_alert_enable,
+                panelTypeResults[0].zone27_alert_enable,
+                panelTypeResults[0].zone28_alert_enable,
+                panelTypeResults[0].zone29_alert_enable,
+                panelTypeResults[0].zone30_alert_enable,
+                panelTypeResults[0].zone31_alert_enable,
+                panelTypeResults[0].zone32_alert_enable,
+                insertedSiteId
               ];
               console.log(updateZoneValues);
 
@@ -1463,6 +1527,43 @@ app.get("/get-subClient", verifyToken, (req, res) => {
   );
 });
 
+//incident page modal
+app.post("/update-incidentmodal/:incidentNo", verifyToken, async (req, res) => {
+  try {
+    // Extract parameters from request
+    const { incidentNo } = req.params;
+    const { Remark } = req.body;
+
+    // Fetch user_id from profile API
+    const userId = req.user_data.Id;
+    console.log(incidentNo,Remark,userId)
+
+    // Update Remark and user_id in IncidentDetail table
+    const updateQuery = `
+      UPDATE IncidentDetail
+      SET Remark = ?,
+          user_id = ?
+      WHERE IncidentNo = ?;
+    `;
+
+    connection.query(updateQuery, [Remark, userId, incidentNo], (err, result) => {
+      if (err) {
+        console.error("Error updating IncidentDetail:", err);
+        res.status(500).json({ error: "Error updating IncidentDetail" });
+      } else {
+        if (result.affectedRows > 0) {
+          res.json({ success: true, message: "IncidentDetail updated successfully." });
+        } else {
+          res.status(404).json({ error: "IncidentDetail not found" });
+        }
+      }
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 // Get Panel Make information
 app.get("/get-panelMake", verifyToken, (req, res) => {
   const allowedRoles = ["Admin", "super admin", "User"];
@@ -1841,6 +1942,95 @@ function test(data) {
     console.log(err);
   }
 }
+
+
+function alerts(data) {
+  try {
+    var values = data.split(',')
+    var macid = data.split(',')[7]
+    var hh = values[19].substring(0, 2)
+    var mm = values[19].substring(2, 4)
+    var ss = values[19].substring(4, 6)
+    var dd = values[20].substring(0, 2)
+    var MM = values[20].substring(2, 4)
+    var yy = values[20].substring(4, 6)
+    var panelTimeUTC = new Date('20' + yy + '-' + MM + '-' + dd + ' ' + hh + ':' + mm + ':' + ss)
+    let istDate = new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
+    var eventCode = values[26].slice(0, 3);
+    try {
+      const queryEventCode = `SELECT event_code, description, alerts_status, alert_check FROM event_codes WHERE event_code LIKE '${eventCode}%'`;
+      connection.query(queryEventCode, (error, result) => {
+        if (error) {
+          console.log(error);
+        } else {
+          console.log(result);
+          if (result.length == 1 && result[0]['alerts_status'] == 1 && result[0]['alert_check'] == 1) {
+            var description = result[0].description
+            connection.query(`SELECT AtmID, BranchName, Client, SubClient, zone${parseInt(values[26].slice(-2))}_name, zone${parseInt(values[26].slice(-2))}_alert_enable FROM SiteDetail WHERE PanelMacId = '${macid}'`, (siteDetailsError, siteDetailsResult) => {
+              if (siteDetailsError) {
+                console.log(siteDetailsError);
+              }
+              if (siteDetailsResult[0]) {
+                if (parseInt((siteDetailsResult[0][`zone${parseInt(values[26].slice(-2))}_alert_enable`]).split(',')[0]) == 1) {
+                  var IncidentName = siteDetailsResult[0][`zone${parseInt(values[26].slice(-2))}_name`] + ' ' + description;
+                  connection.query(`insert into IncidentDetail (AtmID, SiteName, Client, SubClient, IncidentName, IstTimeStamp, PanelTimeStamp, AlertType) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, [siteDetailsResult[0].AtmID, siteDetailsResult[0].BranchName, siteDetailsResult[0].Client, siteDetailsResult[0].SubClient, IncidentName, moment(istDate).format("YYYY-MM-DD HH:mm:ss"), moment(panelTimeUTC).format('YYYY-MM-DD HH:mm:ss'), parseInt((siteDetailsResult[0][`zone${parseInt(values[26].slice(-2))}_alert_enable`]).split(',')[1])], (IncidentDetailError, IncidentDetailResult) => {
+                    if (IncidentDetailError) {
+                      console.log(IncidentDetailError);
+                    } else {
+                      console.log(IncidentDetailResult);
+                    }
+                  });
+                }
+              }
+            });
+          } else if (result.length == 1 && result[0]['alerts_status'] == 1 && result[0]['alert_check'] == 0) {
+            var description = result[0].description
+            connection.query(`SELECT AtmID, BranchName, Client, SubClient FROM SiteDetail WHERE PanelMacId = '${macid}'`, (siteDetailsError, siteDetailsResult) => {
+              if (siteDetailsError) {
+                console.log(siteDetailsError);
+              }
+              if (siteDetailsResult[0]) {
+                var IncidentName = description;
+                connection.query(`insert into IncidentDetail (AtmID, SiteName, Client, SubClient, IncidentName, IstTimeStamp, PanelTimeStamp, AlertType) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, [siteDetailsResult[0].AtmID, siteDetailsResult[0].BranchName, siteDetailsResult[0].Client, siteDetailsResult[0].SubClient, IncidentName, moment(istDate).format("YYYY-MM-DD HH:mm:ss"), moment(panelTimeUTC).format('YYYY-MM-DD HH:mm:ss'), 3], (IncidentDetailError, IncidentDetailResult) => {
+                  if (IncidentDetailError) {
+                    console.log(IncidentDetailError);
+                  } else {
+                    console.log(IncidentDetailResult);
+                  }
+                });
+              }
+            });
+          } else if (result.length > 1) {
+            for (i = 0; i < result.length; i++) {
+              if (result[i].event_code == values[26] && result[i].alerts_status == 1 && result[i].alert_check == 0) {
+                var description = result[i].description;
+                connection.query(`SELECT AtmID, BranchName, Client, SubClient FROM SiteDetail WHERE PanelMacId = '${macid}'`, (siteDetailsError, siteDetailsResult) => {
+                  if (siteDetailsError) {
+                    console.log(siteDetailsError);
+                  }
+                  if (siteDetailsResult[0]) {
+                    var IncidentName = description;
+                    connection.query(`insert into IncidentDetail (AtmID, SiteName, Client, SubClient, IncidentName, IstTimeStamp, PanelTimeStamp, AlertType) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, [siteDetailsResult[0].AtmID, siteDetailsResult[0].BranchName, siteDetailsResult[0].Client, siteDetailsResult[0].SubClient, IncidentName, moment(istDate).format("YYYY-MM-DD HH:mm:ss"), moment(panelTimeUTC).format('YYYY-MM-DD HH:mm:ss'), 3], (IncidentDetailError, IncidentDetailResult) => {
+                      if (IncidentDetailError) {
+                        console.log(IncidentDetailError);
+                      }
+                    });
+                  }
+                });
+              }
+            }
+          }
+        }
+      });
+    }
+    catch (err) {
+      console.log(err);
+    }
+  } catch (err) {
+    console.log(err);
+  }
+}
+
 const server = net.createServer((socket) => {
   console.log("Client connected");
   socket.write(`$1lv,4,\n`);
@@ -1850,9 +2040,9 @@ const server = net.createServer((socket) => {
     console.log(`Received data from client ${data}`);
     if (cstr[0] == "#1I") {
       try {
-        // alerts(str);
+        alerts(str);
         socket.write(`$1lv,4,\n`);
-        // socket.write(`$1lB,16,1,cstr[23],\n`);
+        socket.write(`$1lB,16,1,cstr[23],\n`);
       } catch (error) {
         console.log(error);
       }

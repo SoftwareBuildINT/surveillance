@@ -1359,40 +1359,23 @@ function test(data) {
           if (result[0]) {
             var SiteId = result[0]["SiteId"];
             connection.query(
-              `update LatestData set macid = '${macid}', zone1_status = '${
-                z[0]
-              }', zone2_status = '${z[1]}', zone3_status = '${
-                z[2]
-              }', zone4_status = '${z[3]}', zone5_status = '${
-                z[4]
-              }', zone6_status = '${z[5]}', zone7_status = '${
-                z[6]
-              }', zone8_status = '${z[7]}', zone9_status = '${
-                z[8]
-              }', zone10_status = '${z[9]}', zone11_status = '${
-                z[10]
-              }', zone12_status = '${z[11]}', zone13_status = '${
-                z[12]
-              }', zone14_status = '${z[13]}', zone15_status = '${
-                z[14]
-              }', zone16_status = '${z[15]}', zone17_status = '${
-                z[16]
-              }', zone18_status = '${z[17]}', zone19_status = '${
-                z[18]
-              }', zone20_status = '${z[19]}', zone21_status = '${
-                z[20]
-              }', zone22_status = '${z[21]}', zone23_status = '${
-                z[22]
-              }', zone24_status = '${z[23]}', zone25_status = '${
-                z[24]
-              }', zone26_status = '${z[25]}', zone27_status = '${
-                z[26]
-              }', zone28_status = '${z[27]}', zone29_status = '${
-                z[28]
-              }', zone30_status = '${z[29]}', zone31_status = '${
-                z[30]
-              }', zone32_status = '${
-                z[31]
+              `update LatestData set macid = '${macid}', zone1_status = '${z[0]
+              }', zone2_status = '${z[1]}', zone3_status = '${z[2]
+              }', zone4_status = '${z[3]}', zone5_status = '${z[4]
+              }', zone6_status = '${z[5]}', zone7_status = '${z[6]
+              }', zone8_status = '${z[7]}', zone9_status = '${z[8]
+              }', zone10_status = '${z[9]}', zone11_status = '${z[10]
+              }', zone12_status = '${z[11]}', zone13_status = '${z[12]
+              }', zone14_status = '${z[13]}', zone15_status = '${z[14]
+              }', zone16_status = '${z[15]}', zone17_status = '${z[16]
+              }', zone18_status = '${z[17]}', zone19_status = '${z[18]
+              }', zone20_status = '${z[19]}', zone21_status = '${z[20]
+              }', zone22_status = '${z[21]}', zone23_status = '${z[22]
+              }', zone24_status = '${z[23]}', zone25_status = '${z[24]
+              }', zone26_status = '${z[25]}', zone27_status = '${z[26]
+              }', zone28_status = '${z[27]}', zone29_status = '${z[28]
+              }', zone30_status = '${z[29]}', zone31_status = '${z[30]
+              }', zone32_status = '${z[31]
               }', panel_evt_dt = '${formattedDate}', ist_evt_dt = '${moment(
                 istDate
               ).format("YYYY-MM-DD HH:mm:ss")}' where SiteId = '${SiteId}'`,
@@ -1433,7 +1416,7 @@ function test(data) {
                         if (
                           (zoneAStatus == null || zoneAStatus == 3) &&
                           z[i] ==
-                            (zoneNum > 9 ? `${zoneNum}RA` : `0${zoneNum}RA`)
+                          (zoneNum > 9 ? `${zoneNum}RA` : `0${zoneNum}RA`)
                         ) {
                           connection.query(
                             `update LatestData set zone${zoneNum}_Astatus = "1,${formattedDate},${moment(
@@ -1450,7 +1433,7 @@ function test(data) {
                         } else if (
                           (zoneAStatus == 1 || zoneAStatus == null) &&
                           z[i] ==
-                            (zoneNum > 9 ? `${zoneNum}AA` : `0${zoneNum}AA`)
+                          (zoneNum > 9 ? `${zoneNum}AA` : `0${zoneNum}AA`)
                         ) {
                           connection.query(
                             `update LatestData set zone${zoneNum}_Astatus = "2,${formattedDate},${moment(
@@ -1479,6 +1462,94 @@ function test(data) {
     console.log(err);
   }
 }
+
+function alerts(data) {
+  try {
+    var values = data.split(',')
+    var macid = data.split(',')[7]
+    var hh = values[19].substring(0, 2)
+    var mm = values[19].substring(2, 4)
+    var ss = values[19].substring(4, 6)
+    var dd = values[20].substring(0, 2)
+    var MM = values[20].substring(2, 4)
+    var yy = values[20].substring(4, 6)
+    var panelTimeUTC = new Date('20' + yy + '-' + MM + '-' + dd + ' ' + hh + ':' + mm + ':' + ss)
+    let istDate = new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
+    var eventCode = values[26].slice(0, 3);
+    try {
+      const queryEventCode = `SELECT event_code, description, alerts_status, alert_check FROM event_codes WHERE event_code LIKE '${eventCode}%'`;
+      connection.query(queryEventCode, (error, result) => {
+        if (error) {
+          console.log(error);
+        } else {
+          console.log(result);
+          if (result.length == 1 && result[0]['alerts_status'] == 1 && result[0]['alert_check'] == 1) {
+            var description = result[0].description
+            connection.query(`SELECT AtmID, BranchName, Client, SubClient, zone${parseInt(values[26].slice(-2))}_name, zone${parseInt(values[26].slice(-2))}_alert_enable FROM SiteDetail WHERE PanelMacId = '${macid}'`, (siteDetailsError, siteDetailsResult) => {
+              if (siteDetailsError) {
+                console.log(siteDetailsError);
+              }
+              if (siteDetailsResult[0]) {
+                if (parseInt((siteDetailsResult[0][`zone${parseInt(values[26].slice(-2))}_alert_enable`]).split(',')[0]) == 1) {
+                  var IncidentName = siteDetailsResult[0][`zone${parseInt(values[26].slice(-2))}_name`] + ' ' + description;
+                  connection.query(`insert into IncidentDetail (AtmID, SiteName, Client, SubClient, IncidentName, IstTimeStamp, PanelTimeStamp, AlertType) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, [siteDetailsResult[0].AtmID, siteDetailsResult[0].BranchName, siteDetailsResult[0].Client, siteDetailsResult[0].SubClient, IncidentName, moment(istDate).format("YYYY-MM-DD HH:mm:ss"), moment(panelTimeUTC).format('YYYY-MM-DD HH:mm:ss'), parseInt((siteDetailsResult[0][`zone${parseInt(values[26].slice(-2))}_alert_enable`]).split(',')[1])], (IncidentDetailError, IncidentDetailResult) => {
+                    if (IncidentDetailError) {
+                      console.log(IncidentDetailError);
+                    } else {
+                      console.log(IncidentDetailResult);
+                    }
+                  });
+                }
+              }
+            });
+          } else if (result.length == 1 && result[0]['alerts_status'] == 1 && result[0]['alert_check'] == 0) {
+            var description = result[0].description
+            connection.query(`SELECT AtmID, BranchName, Client, SubClient FROM SiteDetail WHERE PanelMacId = '${macid}'`, (siteDetailsError, siteDetailsResult) => {
+              if (siteDetailsError) {
+                console.log(siteDetailsError);
+              }
+              if (siteDetailsResult[0]) {
+                var IncidentName = description;
+                connection.query(`insert into IncidentDetail (AtmID, SiteName, Client, SubClient, IncidentName, IstTimeStamp, PanelTimeStamp, AlertType) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, [siteDetailsResult[0].AtmID, siteDetailsResult[0].BranchName, siteDetailsResult[0].Client, siteDetailsResult[0].SubClient, IncidentName, moment(istDate).format("YYYY-MM-DD HH:mm:ss"), moment(panelTimeUTC).format('YYYY-MM-DD HH:mm:ss'), 3], (IncidentDetailError, IncidentDetailResult) => {
+                  if (IncidentDetailError) {
+                    console.log(IncidentDetailError);
+                  } else {
+                    console.log(IncidentDetailResult);
+                  }
+                });
+              }
+            });
+          } else if (result.length > 1) {
+            for (i = 0; i < result.length; i++) {
+              if (result[i].event_code == values[26] && result[i].alerts_status == 1 && result[i].alert_check == 0) {
+                var description = result[i].description;
+                connection.query(`SELECT AtmID, BranchName, Client, SubClient FROM SiteDetail WHERE PanelMacId = '${macid}'`, (siteDetailsError, siteDetailsResult) => {
+                  if (siteDetailsError) {
+                    console.log(siteDetailsError);
+                  }
+                  if (siteDetailsResult[0]) {
+                    var IncidentName = description;
+                    connection.query(`insert into IncidentDetail (AtmID, SiteName, Client, SubClient, IncidentName, IstTimeStamp, PanelTimeStamp, AlertType) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, [siteDetailsResult[0].AtmID, siteDetailsResult[0].BranchName, siteDetailsResult[0].Client, siteDetailsResult[0].SubClient, IncidentName, moment(istDate).format("YYYY-MM-DD HH:mm:ss"), moment(panelTimeUTC).format('YYYY-MM-DD HH:mm:ss'), 3], (IncidentDetailError, IncidentDetailResult) => {
+                      if (IncidentDetailError) {
+                        console.log(IncidentDetailError);
+                      }
+                    });
+                  }
+                });
+              }
+            }
+          }
+        }
+      });
+    }
+    catch (err) {
+      console.log(err);
+    }
+  } catch (err) {
+    console.log(err);
+  }
+}
+
 const server = net.createServer((socket) => {
   console.log("Client connected");
   socket.write(`$1lv,4,\n`);
