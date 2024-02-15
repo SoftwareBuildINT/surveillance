@@ -1484,6 +1484,43 @@ app.get("/get-subClient", verifyToken, (req, res) => {
   );
 });
 
+//incident page modal
+app.post("/update-incident/:incidentNo", verifyToken, async (req, res) => {
+  try {
+    // Extract parameters from request
+    const { incidentNo } = req.params;
+    const { Remark } = req.body;
+
+    // Fetch user_id from profile API
+    const userId = req.user_data.Id;
+    console.log(incidentNo,Remark,userId)
+
+    // Update Remark and user_id in IncidentDetail table
+    const updateQuery = `
+      UPDATE IncidentDetail
+      SET Remark = ?,
+          user_id = ?
+      WHERE IncidentNo = ?;
+    `;
+
+    connection.query(updateQuery, [Remark, userId, incidentNo], (err, result) => {
+      if (err) {
+        console.error("Error updating IncidentDetail:", err);
+        res.status(500).json({ error: "Error updating IncidentDetail" });
+      } else {
+        if (result.affectedRows > 0) {
+          res.json({ success: true, message: "IncidentDetail updated successfully." });
+        } else {
+          res.status(404).json({ error: "IncidentDetail not found" });
+        }
+      }
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 // Get Panel Make information
 app.get("/get-panelMake", verifyToken, (req, res) => {
   const allowedRoles = ["Admin", "super admin", "User"];
