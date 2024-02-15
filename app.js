@@ -100,7 +100,16 @@ app.get("/profile", verifyToken, (req, res) => {
     }
   });
 });
-app.get("/checkStatus", (req, res) => {
+
+app.get("/checkStatus", verifyToken, (req, res) => {
+  const allowedRoles = ["Admin", "super admin", "User"];
+
+  if (!allowedRoles.includes(req.user_data.role)) {
+    return res
+      .status(403)
+      .json({ error: "Permission denied. Insufficient role." });
+  }
+
   connection.query(
     "SELECT SiteDetail.AtmID, LatestData.ist_evt_dt FROM SiteDetail JOIN LatestData ON SiteDetail.SiteId = LatestData.SiteId;",
     (err, results) => {
@@ -214,7 +223,15 @@ app.delete("/delete-site/:siteId", verifyToken, (req, res) => {
   });
 });
 
-app.post("/addUser", async (req, res) => {
+app.post("/addUser", verifyToken, async (req, res) => {
+  const allowedRoles = ["Admin", "super admin", "User"];
+
+  if (!allowedRoles.includes(req.user_data.role)) {
+    return res
+      .status(403)
+      .json({ error: "Permission denied. Insufficient role." });
+  }
+
   const {
     Id,
     FirstName,
@@ -917,12 +934,14 @@ app.get("/get-incident", verifyToken, (req, res) => {
 });
 
 // Define your API endpoint
-app.get("/site-list", (req, res) => {
-  // const allowedRoles = ['Admin', 'super admin','User'];
+app.get("/site-list", verifyToken, (req, res) => {
+  const allowedRoles = ["Admin", "super admin", "User"];
 
-  // if (!allowedRoles.includes(req.user_data.role)) {
-  //   return res.status(403).json({ error: 'Permission denied. Insufficient role.' });
-  // }
+  if (!allowedRoles.includes(req.user_data.role)) {
+    return res
+      .status(403)
+      .json({ error: "Permission denied. Insufficient role." });
+  }
   const SiteId = req.query.SiteId;
 
   // Use parameterized queries to prevent SQL injection
@@ -1022,7 +1041,15 @@ app.get("/total-router", verifyToken, (req, res) => {
   );
 });
 
-app.get("/user-list", (req, res) => {
+app.get("/user-list", verifyToken, (req, res) => {
+  const allowedRoles = ["Admin", "super admin", "User"];
+
+  if (!allowedRoles.includes(req.user_data.role)) {
+    return res
+      .status(403)
+      .json({ error: "Permission denied. Insufficient role." });
+  }
+
   const Id = req.query.Id;
   let sql = `SELECT Id,concat(FirstName,' ',LastName) as user_name,FirstName,LastName,EmailId, ContactNo,role,Organization, created_at  FROM login;`;
   let values = [];
@@ -1132,7 +1159,15 @@ app.get("/api/cities", verifyToken, (req, res) => {
   });
 });
 
-app.get("/org/list", (req, res) => {
+app.get("/org/list", verifyToken, (req, res) => {
+  const allowedRoles = ["Admin", "super admin", "User"];
+
+  if (!allowedRoles.includes(req.user_data.role)) {
+    return res
+      .status(403)
+      .json({ error: "Permission denied. Insufficient role." });
+  }
+
   const OrgId = req.query.OrgId;
   let sql = `SELECT OrgId,OrgName, MangFName, MangLName, concat(MangFName,' ',MangLName) as MangName,MangEmail, Mangcontact,SubClient,CreatedBy FROM Organization WHERE IsActive = 1;`;
   let values = [];
@@ -1152,99 +1187,121 @@ app.get("/org/list", (req, res) => {
   });
 });
 
-app.post("/api/upload", upload.single("uploadImage"), (req, res) => {
-  const {
-    OrgId,
-    OrgName,
-    SubClient,
-    MangFName,
-    MangLName,
-    Mangcontact,
-    MangEmail,
-  } = req.body;
+app.post(
+  "/api/upload",
+  upload.single("uploadImage"),
+  verifyToken,
+  (req, res) => {
+    const allowedRoles = ["Admin", "super admin", "User"];
 
-  const imageBuffer = req.file ? req.file.buffer : null;
+    if (!allowedRoles.includes(req.user_data.role)) {
+      return res
+        .status(403)
+        .json({ error: "Permission denied. Insufficient role." });
+    }
 
-  // Check if OrgId is provided to determine if it's an UPDATE or INSERT request
-  if (OrgId) {
-    // UPDATE request
-    const sql =
-      "UPDATE Organization SET OrgName = ?, SubClient = ?, MangFName = ?, MangLName = ?, Mangcontact = ?, MangEmail = ?, image = ? WHERE OrgId = ?";
-    const values = [
-      OrgName,
-      SubClient,
-      MangFName,
-      MangLName,
-      Mangcontact,
-      MangEmail,
-      imageBuffer,
+    const {
       OrgId,
-    ];
-
-    connection.query(sql, values, (err, result) => {
-      if (err) {
-        console.error("Error updating data in the database:", err);
-        res
-          .status(500)
-          .json({ success: false, message: "Internal server error" });
-      } else {
-        console.log("Data updated in the database:", result);
-        res.json({
-          success: true,
-          message: "Data updated in the database successfully",
-          data: {
-            OrgId,
-            OrgName,
-            SubClient,
-            MangFName,
-            MangLName,
-            Mangcontact,
-            MangEmail,
-          },
-        });
-      }
-    });
-  } else {
-    // INSERT request
-    const sql =
-      "INSERT INTO Organization (OrgName, SubClient, MangFName, MangLName, Mangcontact, MangEmail, image) VALUES (?, ?, ?, ?, ?, ?, ?)";
-    const values = [
       OrgName,
       SubClient,
       MangFName,
       MangLName,
       Mangcontact,
       MangEmail,
-      imageBuffer,
-    ];
+    } = req.body;
 
-    connection.query(sql, values, (err, result) => {
-      if (err) {
-        console.error("Error inserting data into the database:", err);
-        res
-          .status(500)
-          .json({ success: false, message: "Internal server error" });
-      } else {
-        console.log("Data inserted into the database:", result);
-        res.json({
-          success: true,
-          message: "Data received and inserted into the database successfully",
-          data: {
-            OrgId: result.insertId,
-            OrgName,
-            SubClient,
-            MangFName,
-            MangLName,
-            Mangcontact,
-            MangEmail,
-          },
-        });
-      }
-    });
+    const imageBuffer = req.file ? req.file.buffer : null;
+
+    // Check if OrgId is provided to determine if it's an UPDATE or INSERT request
+    if (OrgId) {
+      // UPDATE request
+      const sql =
+        "UPDATE Organization SET OrgName = ?, SubClient = ?, MangFName = ?, MangLName = ?, Mangcontact = ?, MangEmail = ?, image = ? WHERE OrgId = ?";
+      const values = [
+        OrgName,
+        SubClient,
+        MangFName,
+        MangLName,
+        Mangcontact,
+        MangEmail,
+        imageBuffer,
+        OrgId,
+      ];
+
+      connection.query(sql, values, (err, result) => {
+        if (err) {
+          console.error("Error updating data in the database:", err);
+          res
+            .status(500)
+            .json({ success: false, message: "Internal server error" });
+        } else {
+          console.log("Data updated in the database:", result);
+          res.json({
+            success: true,
+            message: "Data updated in the database successfully",
+            data: {
+              OrgId,
+              OrgName,
+              SubClient,
+              MangFName,
+              MangLName,
+              Mangcontact,
+              MangEmail,
+            },
+          });
+        }
+      });
+    } else {
+      // INSERT request
+      const sql =
+        "INSERT INTO Organization (OrgName, SubClient, MangFName, MangLName, Mangcontact, MangEmail, image) VALUES (?, ?, ?, ?, ?, ?, ?)";
+      const values = [
+        OrgName,
+        SubClient,
+        MangFName,
+        MangLName,
+        Mangcontact,
+        MangEmail,
+        imageBuffer,
+      ];
+
+      connection.query(sql, values, (err, result) => {
+        if (err) {
+          console.error("Error inserting data into the database:", err);
+          res
+            .status(500)
+            .json({ success: false, message: "Internal server error" });
+        } else {
+          console.log("Data inserted into the database:", result);
+          res.json({
+            success: true,
+            message:
+              "Data received and inserted into the database successfully",
+            data: {
+              OrgId: result.insertId,
+              OrgName,
+              SubClient,
+              MangFName,
+              MangLName,
+              Mangcontact,
+              MangEmail,
+            },
+          });
+        }
+      });
+    }
   }
-});
+);
 
-app.post("/update-incident", (req, res) => {
+app.post("/update-incident", verifyToken, (req, res) => {
+  const allowedRoles = ["Admin", "super admin", "User"];
+
+  if (!allowedRoles.includes(req.user_data.role)) {
+    return res
+      .status(403)
+      .json({ error: "Permission denied. Insufficient role." });
+  }
+
   // Call the stored procedure
   connection.query("CALL UpdateAllIncidents()", (err, result) => {
     if (err) {
@@ -1257,8 +1314,15 @@ app.post("/update-incident", (req, res) => {
   });
 });
 
-app.delete("/deleteclient/:OrgId", (req, res) => {
+app.delete("/deleteclient/:OrgId", verifyToken, (req, res) => {
   // Check if the user has the required roles to perform this action
+  const allowedRoles = ["Admin", "super admin", "User"];
+
+  if (!allowedRoles.includes(req.user_data.role)) {
+    return res
+      .status(403)
+      .json({ error: "Permission denied. Insufficient role." });
+  }
 
   const OrgId = req.params.OrgId; // Retrieve siteId from URL parameters
 
@@ -1409,7 +1473,15 @@ app.post("/logout", (req, res) => {
   res.status(200).json({ message: "Logout successful" });
 });
 
-app.get("/api/latestpanel/data", (req, res) => {
+app.get("/api/latestpanel/data", verifyToken, (req, res) => {
+  const allowedRoles = ["Admin", "super admin", "User"];
+
+  if (!allowedRoles.includes(req.user_data.role)) {
+    return res
+      .status(403)
+      .json({ error: "Permission denied. Insufficient role." });
+  }
+
   // Use the pool to get a connection
   connection.getConnection((err, connection) => {
     if (err) {
