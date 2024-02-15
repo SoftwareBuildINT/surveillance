@@ -47,7 +47,10 @@ const verifyToken = (req, res, next) => {
   const token = req.headers.authorization;
 
   if (!token) {
-    return res.status(401).json({ error: "Unauthorized" });
+    res.status(401).json({ error: "Unauthorized" });
+    return res.redirect(
+      "http://127.0.0.1:5500/surveillance_uat/pages-login.html"
+    );
   }
 
   jwt.verify(token, "secretkey", (err, decoded) => {
@@ -223,15 +226,48 @@ app.delete("/delete-site/:siteId", verifyToken, (req, res) => {
   });
 });
 
-app.post("/addUser", verifyToken, async (req, res) => {
+app.post("/updateUser", async (req, res) => {
   const allowedRoles = ["Admin", "super admin", "User"];
 
+  // Check if the user making the request has the required role
+  // if (!allowedRoles.includes(req.user_data.role)) {
+  //   return res
+  //     .status(403)
+  //     .json({ error: "Permission denied. Insufficient role." });
+  // }
+
+  // Destructure request body to extract user data
+  const { Id, FirstName, LastName, EmailId, role, Organization, ContactNo } =
+    req.body;
+
+  connection.query(
+    `UPDATE login SET FirstName = ?, LastName = ?, EmailId = ?, role = ?, Organization = ?, ContactNo = ? WHERE Id = ?`,
+    [FirstName, LastName, EmailId, role, Organization, ContactNo, Id],
+    function (err, result) {
+      if (err) {
+        // Error handling for database query
+        console.error(err.message);
+        return res.status(500).json({ error: "Failed to update user." });
+      } else {
+        // Successful update response
+        console.log(`User with email ${EmailId} updated successfully.`);
+        return res.status(200).json({ message: "User updated successfully." });
+      }
+    }
+  );
+});
+
+app.post("/addUser", async (req, res) => {
+  const allowedRoles = ["Admin", "super admin", "User"];
+
+  // Check if the user making the request has the required role
   if (!allowedRoles.includes(req.user_data.role)) {
     return res
       .status(403)
       .json({ error: "Permission denied. Insufficient role." });
   }
 
+  // Destructure request body to extract user data
   const {
     Id,
     FirstName,
@@ -249,13 +285,13 @@ app.post("/addUser", verifyToken, async (req, res) => {
 
     // Check if user data already exists in the database
     connection.query(
-      `SELECT * FROM login WHERE EmailId = ?`,
-      [EmailId],
+      `SELECT * FROM login WHERE Id = ?`,
+      [Id],
       async function (err, rows) {
         if (err) {
+          // Error handling for database query
           console.error(err.message);
-          res.status(500).json({ error: "Failed to add user." });
-          return;
+          return res.status(500).json({ error: "Failed to add user." });
         }
 
         if (rows.length > 0) {
@@ -266,7 +302,7 @@ app.post("/addUser", verifyToken, async (req, res) => {
               FirstName,
               LastName,
               EmailId,
-              password,
+              hashedPassword,
               role,
               Organization,
               ContactNo,
@@ -274,11 +310,17 @@ app.post("/addUser", verifyToken, async (req, res) => {
             ],
             function (err, result) {
               if (err) {
+                // Error handling for database query
                 console.error(err.message);
-                res.status(500).json({ error: "Failed to update user." });
+                return res
+                  .status(500)
+                  .json({ error: "Failed to update user." });
               } else {
+                // Successful update response
                 console.log(`User with email ${EmailId} updated successfully.`);
-                res.status(200).json({ message: "User updated successfully." });
+                return res
+                  .status(200)
+                  .json({ message: "User updated successfully." });
               }
             }
           );
@@ -297,13 +339,15 @@ app.post("/addUser", verifyToken, async (req, res) => {
             ],
             function (err, result) {
               if (err) {
+                // Error handling for database query
                 console.error(err.message);
-                res.status(500).json({ error: "Failed to add user." });
+                return res.status(500).json({ error: "Failed to add user." });
               } else {
+                // Successful insertion response
                 console.log(
                   `User with email ${EmailId} registered successfully.`
                 );
-                res
+                return res
                   .status(201)
                   .json({ message: "User registered successfully." });
               }
@@ -313,8 +357,9 @@ app.post("/addUser", verifyToken, async (req, res) => {
       }
     );
   } catch (err) {
+    // Error handling for hashing or other async operations
     console.error(err.message);
-    res.status(500).json({ error: "Failed to register user." });
+    return res.status(500).json({ error: "Failed to register user." });
   }
 });
 
@@ -919,9 +964,7 @@ app.get("/get-incident", verifyToken, (req, res) => {
       .json({ error: "Permission denied. Insufficient role." });
   }
   connection.query(
-    `
-  SELECT * FROM IncidentDetail
-`,
+    `SELECT * FROM IncidentDetail ORDER BY 1 DESC`,
     (error, results) => {
       if (error) {
         console.error("Error retrieving site details:", error);
@@ -1464,14 +1507,24 @@ app.get("/get-panelType", verifyToken, (req, res) => {
   );
 });
 
-// Logout route
 app.post("/logout", (req, res) => {
   // Clear the JWT token from the client-side storage
-  res.clearCookie("token"); // Assuming the JWT token is stored in a cookie named 'jwtToken'
+  console.log("clearing token");
+  res.clearCookie("token");
+  res.setHeader("Authorization", "");
 
-  // Respond with a success message
-  res.status(200).json({ message: "Logout successful" });
+  // Send a JSON response with the redirect URL
+  res.status(200).json({ redirectTo: "/surveillance_uat/pages-login.html" });
 });
+
+// Logout route
+// app.post("/logout", (req, res) => {
+//   // Clear the JWT token from the client-side storage
+//   res.clearCookie("token"); // Assuming the JWT token is stored in a cookie named 'jwtToken'
+
+//   // Respond with a success message
+//   res.status(200).json({ message: "Logout successful" });
+// });
 
 app.get("/api/latestpanel/data", verifyToken, (req, res) => {
   const allowedRoles = ["Admin", "super admin", "User"];
