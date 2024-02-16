@@ -911,7 +911,7 @@ app.post("/addsite", verifyToken, (req, res) => {
                 panelTypeResults[0].zone30_alert_enable,
                 panelTypeResults[0].zone31_alert_enable,
                 panelTypeResults[0].zone32_alert_enable,
-                insertedSiteId
+                insertedSiteId,
               ];
               console.log(updateZoneValues);
 
@@ -1536,7 +1536,7 @@ app.post("/update-incidentmodal/:incidentNo", verifyToken, async (req, res) => {
 
     // Fetch user_id from profile API
     const userId = req.user_data.Id;
-    console.log(incidentNo,Remark,userId)
+    console.log(incidentNo, Remark, userId);
 
     // Update Remark and user_id in IncidentDetail table
     const updateQuery = `
@@ -1546,18 +1546,25 @@ app.post("/update-incidentmodal/:incidentNo", verifyToken, async (req, res) => {
       WHERE IncidentNo = ?;
     `;
 
-    connection.query(updateQuery, [Remark, userId, incidentNo], (err, result) => {
-      if (err) {
-        console.error("Error updating IncidentDetail:", err);
-        res.status(500).json({ error: "Error updating IncidentDetail" });
-      } else {
-        if (result.affectedRows > 0) {
-          res.json({ success: true, message: "IncidentDetail updated successfully." });
+    connection.query(
+      updateQuery,
+      [Remark, userId, incidentNo],
+      (err, result) => {
+        if (err) {
+          console.error("Error updating IncidentDetail:", err);
+          res.status(500).json({ error: "Error updating IncidentDetail" });
         } else {
-          res.status(404).json({ error: "IncidentDetail not found" });
+          if (result.affectedRows > 0) {
+            res.json({
+              success: true,
+              message: "IncidentDetail updated successfully.",
+            });
+          } else {
+            res.status(404).json({ error: "IncidentDetail not found" });
+          }
         }
       }
-    });
+    );
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal Server Error" });
@@ -1943,19 +1950,22 @@ function test(data) {
   }
 }
 
-
 function alerts(data) {
   try {
-    var values = data.split(',')
-    var macid = data.split(',')[7]
-    var hh = values[19].substring(0, 2)
-    var mm = values[19].substring(2, 4)
-    var ss = values[19].substring(4, 6)
-    var dd = values[20].substring(0, 2)
-    var MM = values[20].substring(2, 4)
-    var yy = values[20].substring(4, 6)
-    var panelTimeUTC = new Date('20' + yy + '-' + MM + '-' + dd + ' ' + hh + ':' + mm + ':' + ss)
-    let istDate = new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
+    var values = data.split(",");
+    var macid = data.split(",")[7];
+    var hh = values[19].substring(0, 2);
+    var mm = values[19].substring(2, 4);
+    var ss = values[19].substring(4, 6);
+    var dd = values[20].substring(0, 2);
+    var MM = values[20].substring(2, 4);
+    var yy = values[20].substring(4, 6);
+    var panelTimeUTC = new Date(
+      "20" + yy + "-" + MM + "-" + dd + " " + hh + ":" + mm + ":" + ss
+    );
+    let istDate = new Date().toLocaleString("en-US", {
+      timeZone: "Asia/Kolkata",
+    });
     var eventCode = values[26].slice(0, 3);
     try {
       const queryEventCode = `SELECT event_code, description, alerts_status, alert_check FROM event_codes WHERE event_code LIKE '${eventCode}%'`;
@@ -1964,66 +1974,144 @@ function alerts(data) {
           console.log(error);
         } else {
           console.log(result);
-          if (result.length == 1 && result[0]['alerts_status'] == 1 && result[0]['alert_check'] == 1) {
-            var description = result[0].description
-            connection.query(`SELECT AtmID, BranchName, Client, SubClient, zone${parseInt(values[26].slice(-2))}_name, zone${parseInt(values[26].slice(-2))}_alert_enable FROM SiteDetail WHERE PanelMacId = '${macid}'`, (siteDetailsError, siteDetailsResult) => {
-              if (siteDetailsError) {
-                console.log(siteDetailsError);
-              }
-              if (siteDetailsResult[0]) {
-                if (parseInt((siteDetailsResult[0][`zone${parseInt(values[26].slice(-2))}_alert_enable`]).split(',')[0]) == 1) {
-                  var IncidentName = siteDetailsResult[0][`zone${parseInt(values[26].slice(-2))}_name`] + ' ' + description;
-                  connection.query(`insert into IncidentDetail (AtmID, SiteName, Client, SubClient, IncidentName, IstTimeStamp, PanelTimeStamp, AlertType) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, [siteDetailsResult[0].AtmID, siteDetailsResult[0].BranchName, siteDetailsResult[0].Client, siteDetailsResult[0].SubClient, IncidentName, moment(istDate).format("YYYY-MM-DD HH:mm:ss"), moment(panelTimeUTC).format('YYYY-MM-DD HH:mm:ss'), parseInt((siteDetailsResult[0][`zone${parseInt(values[26].slice(-2))}_alert_enable`]).split(',')[1])], (IncidentDetailError, IncidentDetailResult) => {
-                    if (IncidentDetailError) {
-                      console.log(IncidentDetailError);
-                    } else {
-                      console.log(IncidentDetailResult);
-                    }
-                  });
+          if (
+            result.length == 1 &&
+            result[0]["alerts_status"] == 1 &&
+            result[0]["alert_check"] == 1
+          ) {
+            var description = result[0].description;
+            connection.query(
+              `SELECT AtmID, BranchName, Client, SubClient, zone${parseInt(
+                values[26].slice(-2)
+              )}_name, zone${parseInt(
+                values[26].slice(-2)
+              )}_alert_enable FROM SiteDetail WHERE PanelMacId = '${macid}'`,
+              (siteDetailsError, siteDetailsResult) => {
+                if (siteDetailsError) {
+                  console.log(siteDetailsError);
+                }
+                if (siteDetailsResult[0]) {
+                  if (
+                    parseInt(
+                      siteDetailsResult[0][
+                        `zone${parseInt(values[26].slice(-2))}_alert_enable`
+                      ].split(",")[0]
+                    ) == 1
+                  ) {
+                    var IncidentName =
+                      siteDetailsResult[0][
+                        `zone${parseInt(values[26].slice(-2))}_name`
+                      ] +
+                      " " +
+                      description;
+                    connection.query(
+                      `insert into IncidentDetail (AtmID, SiteName, Client, SubClient, IncidentName, IstTimeStamp, PanelTimeStamp, AlertType) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+                      [
+                        siteDetailsResult[0].AtmID,
+                        siteDetailsResult[0].BranchName,
+                        siteDetailsResult[0].Client,
+                        siteDetailsResult[0].SubClient,
+                        IncidentName,
+                        moment(istDate).format("YYYY-MM-DD HH:mm:ss"),
+                        moment(panelTimeUTC).format("YYYY-MM-DD HH:mm:ss"),
+                        parseInt(
+                          siteDetailsResult[0][
+                            `zone${parseInt(values[26].slice(-2))}_alert_enable`
+                          ].split(",")[1]
+                        ),
+                      ],
+                      (IncidentDetailError, IncidentDetailResult) => {
+                        if (IncidentDetailError) {
+                          console.log(IncidentDetailError);
+                        } else {
+                          console.log(IncidentDetailResult);
+                        }
+                      }
+                    );
+                  }
                 }
               }
-            });
-          } else if (result.length == 1 && result[0]['alerts_status'] == 1 && result[0]['alert_check'] == 0) {
-            var description = result[0].description
-            connection.query(`SELECT AtmID, BranchName, Client, SubClient FROM SiteDetail WHERE PanelMacId = '${macid}'`, (siteDetailsError, siteDetailsResult) => {
-              if (siteDetailsError) {
-                console.log(siteDetailsError);
-              }
-              if (siteDetailsResult[0]) {
-                var IncidentName = description;
-                connection.query(`insert into IncidentDetail (AtmID, SiteName, Client, SubClient, IncidentName, IstTimeStamp, PanelTimeStamp, AlertType) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, [siteDetailsResult[0].AtmID, siteDetailsResult[0].BranchName, siteDetailsResult[0].Client, siteDetailsResult[0].SubClient, IncidentName, moment(istDate).format("YYYY-MM-DD HH:mm:ss"), moment(panelTimeUTC).format('YYYY-MM-DD HH:mm:ss'), 3], (IncidentDetailError, IncidentDetailResult) => {
-                  if (IncidentDetailError) {
-                    console.log(IncidentDetailError);
-                  } else {
-                    console.log(IncidentDetailResult);
-                  }
-                });
-              }
-            });
-          } else if (result.length > 1) {
-            for (i = 0; i < result.length; i++) {
-              if (result[i].event_code == values[26] && result[i].alerts_status == 1 && result[i].alert_check == 0) {
-                var description = result[i].description;
-                connection.query(`SELECT AtmID, BranchName, Client, SubClient FROM SiteDetail WHERE PanelMacId = '${macid}'`, (siteDetailsError, siteDetailsResult) => {
-                  if (siteDetailsError) {
-                    console.log(siteDetailsError);
-                  }
-                  if (siteDetailsResult[0]) {
-                    var IncidentName = description;
-                    connection.query(`insert into IncidentDetail (AtmID, SiteName, Client, SubClient, IncidentName, IstTimeStamp, PanelTimeStamp, AlertType) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, [siteDetailsResult[0].AtmID, siteDetailsResult[0].BranchName, siteDetailsResult[0].Client, siteDetailsResult[0].SubClient, IncidentName, moment(istDate).format("YYYY-MM-DD HH:mm:ss"), moment(panelTimeUTC).format('YYYY-MM-DD HH:mm:ss'), 3], (IncidentDetailError, IncidentDetailResult) => {
+            );
+          } else if (
+            result.length == 1 &&
+            result[0]["alerts_status"] == 1 &&
+            result[0]["alert_check"] == 0
+          ) {
+            var description = result[0].description;
+            connection.query(
+              `SELECT AtmID, BranchName, Client, SubClient FROM SiteDetail WHERE PanelMacId = '${macid}'`,
+              (siteDetailsError, siteDetailsResult) => {
+                if (siteDetailsError) {
+                  console.log(siteDetailsError);
+                }
+                if (siteDetailsResult[0]) {
+                  var IncidentName = description;
+                  connection.query(
+                    `insert into IncidentDetail (AtmID, SiteName, Client, SubClient, IncidentName, IstTimeStamp, PanelTimeStamp, AlertType) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+                    [
+                      siteDetailsResult[0].AtmID,
+                      siteDetailsResult[0].BranchName,
+                      siteDetailsResult[0].Client,
+                      siteDetailsResult[0].SubClient,
+                      IncidentName,
+                      moment(istDate).format("YYYY-MM-DD HH:mm:ss"),
+                      moment(panelTimeUTC).format("YYYY-MM-DD HH:mm:ss"),
+                      3,
+                    ],
+                    (IncidentDetailError, IncidentDetailResult) => {
                       if (IncidentDetailError) {
                         console.log(IncidentDetailError);
+                      } else {
+                        console.log(IncidentDetailResult);
                       }
-                    });
+                    }
+                  );
+                }
+              }
+            );
+          } else if (result.length > 1) {
+            for (i = 0; i < result.length; i++) {
+              if (
+                result[i].event_code == values[26] &&
+                result[i].alerts_status == 1 &&
+                result[i].alert_check == 0
+              ) {
+                var description = result[i].description;
+                connection.query(
+                  `SELECT AtmID, BranchName, Client, SubClient FROM SiteDetail WHERE PanelMacId = '${macid}'`,
+                  (siteDetailsError, siteDetailsResult) => {
+                    if (siteDetailsError) {
+                      console.log(siteDetailsError);
+                    }
+                    if (siteDetailsResult[0]) {
+                      var IncidentName = description;
+                      connection.query(
+                        `insert into IncidentDetail (AtmID, SiteName, Client, SubClient, IncidentName, IstTimeStamp, PanelTimeStamp, AlertType) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+                        [
+                          siteDetailsResult[0].AtmID,
+                          siteDetailsResult[0].BranchName,
+                          siteDetailsResult[0].Client,
+                          siteDetailsResult[0].SubClient,
+                          IncidentName,
+                          moment(istDate).format("YYYY-MM-DD HH:mm:ss"),
+                          moment(panelTimeUTC).format("YYYY-MM-DD HH:mm:ss"),
+                          3,
+                        ],
+                        (IncidentDetailError, IncidentDetailResult) => {
+                          if (IncidentDetailError) {
+                            console.log(IncidentDetailError);
+                          }
+                        }
+                      );
+                    }
                   }
-                });
+                );
               }
             }
           }
         }
       });
-    }
-    catch (err) {
+    } catch (err) {
       console.log(err);
     }
   } catch (err) {

@@ -47,7 +47,10 @@ const verifyToken = (req, res, next) => {
   const token = req.headers.authorization;
 
   if (!token) {
-    return res.status(401).json({ error: "Unauthorized" });
+    res.status(401).json({ error: "Unauthorized" });
+    return res.redirect(
+      "http://127.0.0.1:5500/surveillance_uat/pages-login.html"
+    );
   }
 
   jwt.verify(token, "secretkey", (err, decoded) => {
@@ -100,7 +103,16 @@ app.get("/profile", verifyToken, (req, res) => {
     }
   });
 });
-app.get("/checkStatus", (req, res) => {
+
+app.get("/checkStatus", verifyToken, (req, res) => {
+  const allowedRoles = ["Admin", "super admin", "User"];
+
+  if (!allowedRoles.includes(req.user_data.role)) {
+    return res
+      .status(403)
+      .json({ error: "Permission denied. Insufficient role." });
+  }
+
   connection.query(
     "SELECT SiteDetail.AtmID, LatestData.ist_evt_dt FROM SiteDetail JOIN LatestData ON SiteDetail.SiteId = LatestData.SiteId;",
     (err, results) => {
@@ -214,7 +226,48 @@ app.delete("/delete-site/:siteId", verifyToken, (req, res) => {
   });
 });
 
+app.post("/updateUser", async (req, res) => {
+  const allowedRoles = ["Admin", "super admin", "User"];
+
+  // Check if the user making the request has the required role
+  // if (!allowedRoles.includes(req.user_data.role)) {
+  //   return res
+  //     .status(403)
+  //     .json({ error: "Permission denied. Insufficient role." });
+  // }
+
+  // Destructure request body to extract user data
+  const { Id, FirstName, LastName, EmailId, role, Organization, ContactNo } =
+    req.body;
+
+  connection.query(
+    `UPDATE login SET FirstName = ?, LastName = ?, EmailId = ?, role = ?, Organization = ?, ContactNo = ? WHERE Id = ?`,
+    [FirstName, LastName, EmailId, role, Organization, ContactNo, Id],
+    function (err, result) {
+      if (err) {
+        // Error handling for database query
+        console.error(err.message);
+        return res.status(500).json({ error: "Failed to update user." });
+      } else {
+        // Successful update response
+        console.log(`User with email ${EmailId} updated successfully.`);
+        return res.status(200).json({ message: "User updated successfully." });
+      }
+    }
+  );
+});
+
 app.post("/addUser", async (req, res) => {
+  const allowedRoles = ["Admin", "super admin", "User"];
+
+  // Check if the user making the request has the required role
+  if (!allowedRoles.includes(req.user_data.role)) {
+    return res
+      .status(403)
+      .json({ error: "Permission denied. Insufficient role." });
+  }
+
+  // Destructure request body to extract user data
   const {
     Id,
     FirstName,
@@ -232,13 +285,13 @@ app.post("/addUser", async (req, res) => {
 
     // Check if user data already exists in the database
     connection.query(
-      `SELECT * FROM login WHERE EmailId = ?`,
-      [EmailId],
+      `SELECT * FROM login WHERE Id = ?`,
+      [Id],
       async function (err, rows) {
         if (err) {
+          // Error handling for database query
           console.error(err.message);
-          res.status(500).json({ error: "Failed to add user." });
-          return;
+          return res.status(500).json({ error: "Failed to add user." });
         }
 
         if (rows.length > 0) {
@@ -257,11 +310,17 @@ app.post("/addUser", async (req, res) => {
             ],
             function (err, result) {
               if (err) {
+                // Error handling for database query
                 console.error(err.message);
-                res.status(500).json({ error: "Failed to update user." });
+                return res
+                  .status(500)
+                  .json({ error: "Failed to update user." });
               } else {
+                // Successful update response
                 console.log(`User with email ${EmailId} updated successfully.`);
-                res.status(200).json({ message: "User updated successfully." });
+                return res
+                  .status(200)
+                  .json({ message: "User updated successfully." });
               }
             }
           );
@@ -280,13 +339,15 @@ app.post("/addUser", async (req, res) => {
             ],
             function (err, result) {
               if (err) {
+                // Error handling for database query
                 console.error(err.message);
-                res.status(500).json({ error: "Failed to add user." });
+                return res.status(500).json({ error: "Failed to add user." });
               } else {
+                // Successful insertion response
                 console.log(
                   `User with email ${EmailId} registered successfully.`
                 );
-                res
+                return res
                   .status(201)
                   .json({ message: "User registered successfully." });
               }
@@ -296,8 +357,9 @@ app.post("/addUser", async (req, res) => {
       }
     );
   } catch (err) {
+    // Error handling for hashing or other async operations
     console.error(err.message);
-    res.status(500).json({ error: "Failed to register user." });
+    return res.status(500).json({ error: "Failed to register user." });
   }
 });
 
@@ -749,7 +811,39 @@ app.post("/addsite", verifyToken, (req, res) => {
             zone29_name = ?,
             zone30_name = ?,
             zone31_name = ?,
-            zone32_name = ?
+            zone32_name = ?,
+            zone1_alert_enable = ?,
+            zone2_alert_enable = ?,
+            zone3_alert_enable = ?,
+            zone4_alert_enable = ?,
+            zone5_alert_enable = ?,
+            zone6_alert_enable = ?,
+            zone7_alert_enable = ?,
+            zone8_alert_enable = ?,
+            zone9_alert_enable = ?,
+            zone10_alert_enable = ?,
+            zone11_alert_enable = ?,
+            zone12_alert_enable = ?,
+            zone13_alert_enable = ?,
+            zone14_alert_enable = ?,
+            zone15_alert_enable = ?,
+            zone16_alert_enable = ?,
+            zone17_alert_enable = ?,
+            zone18_alert_enable = ?,
+            zone19_alert_enable = ?,
+            zone20_alert_enable = ?,
+            zone21_alert_enable = ?,
+            zone22_alert_enable = ?,
+            zone23_alert_enable = ?,
+            zone24_alert_enable = ?,
+            zone25_alert_enable = ?,
+            zone26_alert_enable = ?,
+            zone27_alert_enable = ?,
+            zone28_alert_enable = ?,
+            zone29_alert_enable = ?,
+            zone30_alert_enable = ?,
+            zone31_alert_enable = ?,
+            zone32_alert_enable = ?
         WHERE SiteId = ?`;
 
               const updateZoneValues = [
@@ -785,6 +879,38 @@ app.post("/addsite", verifyToken, (req, res) => {
                 panelTypeResults[0].zone30_name,
                 panelTypeResults[0].zone31_name,
                 panelTypeResults[0].zone32_name,
+                panelTypeResults[0].zone1_alert_enable,
+                panelTypeResults[0].zone2_alert_enable,
+                panelTypeResults[0].zone3_alert_enable,
+                panelTypeResults[0].zone4_alert_enable,
+                panelTypeResults[0].zone5_alert_enable,
+                panelTypeResults[0].zone6_alert_enable,
+                panelTypeResults[0].zone7_alert_enable,
+                panelTypeResults[0].zone8_alert_enable,
+                panelTypeResults[0].zone9_alert_enable,
+                panelTypeResults[0].zone10_alert_enable,
+                panelTypeResults[0].zone11_alert_enable,
+                panelTypeResults[0].zone12_alert_enable,
+                panelTypeResults[0].zone13_alert_enable,
+                panelTypeResults[0].zone14_alert_enable,
+                panelTypeResults[0].zone15_alert_enable,
+                panelTypeResults[0].zone16_alert_enable,
+                panelTypeResults[0].zone17_alert_enable,
+                panelTypeResults[0].zone18_alert_enable,
+                panelTypeResults[0].zone19_alert_enable,
+                panelTypeResults[0].zone20_alert_enable,
+                panelTypeResults[0].zone21_alert_enable,
+                panelTypeResults[0].zone22_alert_enable,
+                panelTypeResults[0].zone23_alert_enable,
+                panelTypeResults[0].zone24_alert_enable,
+                panelTypeResults[0].zone25_alert_enable,
+                panelTypeResults[0].zone26_alert_enable,
+                panelTypeResults[0].zone27_alert_enable,
+                panelTypeResults[0].zone28_alert_enable,
+                panelTypeResults[0].zone29_alert_enable,
+                panelTypeResults[0].zone30_alert_enable,
+                panelTypeResults[0].zone31_alert_enable,
+                panelTypeResults[0].zone32_alert_enable,
                 insertedSiteId,
               ];
               console.log(updateZoneValues);
@@ -902,9 +1028,7 @@ app.get("/get-incident", verifyToken, (req, res) => {
       .json({ error: "Permission denied. Insufficient role." });
   }
   connection.query(
-    `
-  SELECT * FROM IncidentDetail
-`,
+    `SELECT * FROM IncidentDetail ORDER BY 1 DESC`,
     (error, results) => {
       if (error) {
         console.error("Error retrieving site details:", error);
@@ -917,12 +1041,14 @@ app.get("/get-incident", verifyToken, (req, res) => {
 });
 
 // Define your API endpoint
-app.get("/site-list", (req, res) => {
-  // const allowedRoles = ['Admin', 'super admin','User'];
+app.get("/site-list", verifyToken, (req, res) => {
+  const allowedRoles = ["Admin", "super admin", "User"];
 
-  // if (!allowedRoles.includes(req.user_data.role)) {
-  //   return res.status(403).json({ error: 'Permission denied. Insufficient role.' });
-  // }
+  if (!allowedRoles.includes(req.user_data.role)) {
+    return res
+      .status(403)
+      .json({ error: "Permission denied. Insufficient role." });
+  }
   const SiteId = req.query.SiteId;
 
   // Use parameterized queries to prevent SQL injection
@@ -1022,20 +1148,31 @@ app.get("/total-router", verifyToken, (req, res) => {
   );
 });
 
-app.get("/user-list", (req, res) => {
-  connection.query(
-    `
-  SELECT Id,concat(FirstName,' ',LastName) as user_name,FirstName,LastName,EmailId, ContactNo,role,Organization, created_at  FROM login;
-`,
-    (error, results) => {
-      if (error) {
-        console.error("Error retrieving Users details:", error);
-        res.status(500).json({ error: "Internal server error" });
-        return;
-      }
-      res.json(results);
+app.get("/user-list", verifyToken, (req, res) => {
+  const allowedRoles = ["Admin", "super admin", "User"];
+
+  if (!allowedRoles.includes(req.user_data.role)) {
+    return res
+      .status(403)
+      .json({ error: "Permission denied. Insufficient role." });
+  }
+
+  const Id = req.query.Id;
+  let sql = `SELECT Id,concat(FirstName,' ',LastName) as user_name,FirstName,LastName,EmailId, ContactNo,role,Organization, created_at  FROM login;`;
+  let values = [];
+
+  if (Id) {
+    sql = `SELECT Id,concat(FirstName,' ',LastName) as user_name,FirstName,LastName,EmailId, ContactNo,role,Organization, created_at FROM login WHERE Id = ?;`;
+    values = [Id];
+  }
+  connection.query(sql, values, (error, results) => {
+    if (error) {
+      console.error("Error retrieving Users details:", error);
+      res.status(500).json({ error: "Internal server error" });
+      return;
     }
-  );
+    res.json(results);
+  });
 });
 
 app.get("/api/regions", verifyToken, (req, res) => {
@@ -1129,13 +1266,21 @@ app.get("/api/cities", verifyToken, (req, res) => {
   });
 });
 
-app.get("/org/list", (req, res) => {
+app.get("/org/list", verifyToken, (req, res) => {
+  const allowedRoles = ["Admin", "super admin", "User"];
+
+  if (!allowedRoles.includes(req.user_data.role)) {
+    return res
+      .status(403)
+      .json({ error: "Permission denied. Insufficient role." });
+  }
+
   const OrgId = req.query.OrgId;
-  let sql = `SELECT OrgId,OrgName, concat(MangFName,' ',MangLName) as MangName,MangEmail, Mangcontact,SubClient,CreatedBy FROM Organization WHERE IsActive = 1;`;
+  let sql = `SELECT OrgId,OrgName, MangFName, MangLName, concat(MangFName,' ',MangLName) as MangName,MangEmail, Mangcontact,SubClient,CreatedBy FROM Organization WHERE IsActive = 1;`;
   let values = [];
 
   if (OrgId) {
-    sql = `SELECT OrgId,OrgName, concat(MangFName,' ',MangLName) as MangName,MangEmail, Mangcontact,SubClient,CreatedBy FROM Organization WHERE IsActive = 1 AND OrgId =?`;
+    sql = `SELECT OrgId,OrgName, MangFName, MangLName, concat(MangFName,' ',MangLName) as MangName,MangEmail, Mangcontact,SubClient,CreatedBy FROM Organization WHERE IsActive = 1 AND OrgId =?`;
     values = [OrgId];
   }
 
@@ -1149,99 +1294,121 @@ app.get("/org/list", (req, res) => {
   });
 });
 
-app.post("/api/upload", upload.single("uploadImage"), (req, res) => {
-  const {
-    OrgId,
-    OrgName,
-    SubClient,
-    MangFName,
-    MangLName,
-    Mangcontact,
-    MangEmail,
-  } = req.body;
+app.post(
+  "/api/upload",
+  upload.single("uploadImage"),
+  verifyToken,
+  (req, res) => {
+    const allowedRoles = ["Admin", "super admin", "User"];
 
-  const imageBuffer = req.file ? req.file.buffer : null;
+    if (!allowedRoles.includes(req.user_data.role)) {
+      return res
+        .status(403)
+        .json({ error: "Permission denied. Insufficient role." });
+    }
 
-  // Check if OrgId is provided to determine if it's an UPDATE or INSERT request
-  if (OrgId) {
-    // UPDATE request
-    const sql =
-      "UPDATE Organization SET OrgName = ?, SubClient = ?, MangFName = ?, MangLName = ?, Mangcontact = ?, MangEmail = ?, image = ? WHERE OrgId = ?";
-    const values = [
-      OrgName,
-      SubClient,
-      MangFName,
-      MangLName,
-      Mangcontact,
-      MangEmail,
-      imageBuffer,
+    const {
       OrgId,
-    ];
-
-    connection.query(sql, values, (err, result) => {
-      if (err) {
-        console.error("Error updating data in the database:", err);
-        res
-          .status(500)
-          .json({ success: false, message: "Internal server error" });
-      } else {
-        console.log("Data updated in the database:", result);
-        res.json({
-          success: true,
-          message: "Data updated in the database successfully",
-          data: {
-            OrgId,
-            OrgName,
-            SubClient,
-            MangFName,
-            MangLName,
-            Mangcontact,
-            MangEmail,
-          },
-        });
-      }
-    });
-  } else {
-    // INSERT request
-    const sql =
-      "INSERT INTO Organization (OrgName, SubClient, MangFName, MangLName, Mangcontact, MangEmail, image) VALUES (?, ?, ?, ?, ?, ?, ?)";
-    const values = [
       OrgName,
       SubClient,
       MangFName,
       MangLName,
       Mangcontact,
       MangEmail,
-      imageBuffer,
-    ];
+    } = req.body;
 
-    connection.query(sql, values, (err, result) => {
-      if (err) {
-        console.error("Error inserting data into the database:", err);
-        res
-          .status(500)
-          .json({ success: false, message: "Internal server error" });
-      } else {
-        console.log("Data inserted into the database:", result);
-        res.json({
-          success: true,
-          message: "Data received and inserted into the database successfully",
-          data: {
-            OrgId: result.insertId,
-            OrgName,
-            SubClient,
-            MangFName,
-            MangLName,
-            Mangcontact,
-            MangEmail,
-          },
-        });
-      }
-    });
+    const imageBuffer = req.file ? req.file.buffer : null;
+
+    // Check if OrgId is provided to determine if it's an UPDATE or INSERT request
+    if (OrgId) {
+      // UPDATE request
+      const sql =
+        "UPDATE Organization SET OrgName = ?, SubClient = ?, MangFName = ?, MangLName = ?, Mangcontact = ?, MangEmail = ?, image = ? WHERE OrgId = ?";
+      const values = [
+        OrgName,
+        SubClient,
+        MangFName,
+        MangLName,
+        Mangcontact,
+        MangEmail,
+        imageBuffer,
+        OrgId,
+      ];
+
+      connection.query(sql, values, (err, result) => {
+        if (err) {
+          console.error("Error updating data in the database:", err);
+          res
+            .status(500)
+            .json({ success: false, message: "Internal server error" });
+        } else {
+          console.log("Data updated in the database:", result);
+          res.json({
+            success: true,
+            message: "Data updated in the database successfully",
+            data: {
+              OrgId,
+              OrgName,
+              SubClient,
+              MangFName,
+              MangLName,
+              Mangcontact,
+              MangEmail,
+            },
+          });
+        }
+      });
+    } else {
+      // INSERT request
+      const sql =
+        "INSERT INTO Organization (OrgName, SubClient, MangFName, MangLName, Mangcontact, MangEmail, image) VALUES (?, ?, ?, ?, ?, ?, ?)";
+      const values = [
+        OrgName,
+        SubClient,
+        MangFName,
+        MangLName,
+        Mangcontact,
+        MangEmail,
+        imageBuffer,
+      ];
+
+      connection.query(sql, values, (err, result) => {
+        if (err) {
+          console.error("Error inserting data into the database:", err);
+          res
+            .status(500)
+            .json({ success: false, message: "Internal server error" });
+        } else {
+          console.log("Data inserted into the database:", result);
+          res.json({
+            success: true,
+            message:
+              "Data received and inserted into the database successfully",
+            data: {
+              OrgId: result.insertId,
+              OrgName,
+              SubClient,
+              MangFName,
+              MangLName,
+              Mangcontact,
+              MangEmail,
+            },
+          });
+        }
+      });
+    }
   }
-});
+);
 
-app.post("/update-incident", (req, res) => {
+app.post("/update-incident", verifyToken, (req, res) => {
+  const allowedRoles = ["Admin", "super admin", "User"];
+
+  if (!allowedRoles.includes(req.user_data.role)) {
+    return res
+      .status(403)
+      .json({ error: "Permission denied. Insufficient role." });
+  }
+
   // Call the stored procedure
   connection.query("CALL UpdateAllIncidents()", (err, result) => {
     if (err) {
@@ -1254,8 +1421,15 @@ app.post("/update-incident", (req, res) => {
   });
 });
 
-app.delete("/deleteclient/:OrgId", (req, res) => {
+app.delete("/deleteclient/:OrgId", verifyToken, (req, res) => {
   // Check if the user has the required roles to perform this action
+  const allowedRoles = ["Admin", "super admin", "User"];
+
+  if (!allowedRoles.includes(req.user_data.role)) {
+    return res
+      .status(403)
+      .json({ error: "Permission denied. Insufficient role." });
+  }
 
   const OrgId = req.params.OrgId; // Retrieve siteId from URL parameters
 
@@ -1353,6 +1527,50 @@ app.get("/get-subClient", verifyToken, (req, res) => {
   );
 });
 
+//incident page modal
+app.post("/update-incidentmodal/:incidentNo", verifyToken, async (req, res) => {
+  try {
+    // Extract parameters from request
+    const { incidentNo } = req.params;
+    const { Remark } = req.body;
+
+    // Fetch user_id from profile API
+    const userId = req.user_data.Id;
+    console.log(incidentNo, Remark, userId);
+
+    // Update Remark and user_id in IncidentDetail table
+    const updateQuery = `
+      UPDATE IncidentDetail
+      SET Remark = ?,
+          user_id = ?
+      WHERE IncidentNo = ?;
+    `;
+
+    connection.query(
+      updateQuery,
+      [Remark, userId, incidentNo],
+      (err, result) => {
+        if (err) {
+          console.error("Error updating IncidentDetail:", err);
+          res.status(500).json({ error: "Error updating IncidentDetail" });
+        } else {
+          if (result.affectedRows > 0) {
+            res.json({
+              success: true,
+              message: "IncidentDetail updated successfully.",
+            });
+          } else {
+            res.status(404).json({ error: "IncidentDetail not found" });
+          }
+        }
+      }
+    );
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 // Get Panel Make information
 app.get("/get-panelMake", verifyToken, (req, res) => {
   const allowedRoles = ["Admin", "super admin", "User"];
@@ -1397,16 +1615,34 @@ app.get("/get-panelType", verifyToken, (req, res) => {
   );
 });
 
-// Logout route
 app.post("/logout", (req, res) => {
   // Clear the JWT token from the client-side storage
-  res.clearCookie("token"); // Assuming the JWT token is stored in a cookie named 'jwtToken'
+  console.log("clearing token");
+  res.clearCookie("token");
+  res.setHeader("Authorization", "");
 
-  // Respond with a success message
-  res.status(200).json({ message: "Logout successful" });
+  // Send a JSON response with the redirect URL
+  res.status(200).json({ redirectTo: "/surveillance_uat/pages-login.html" });
 });
 
-app.get("/api/latestpanel/data", (req, res) => {
+// Logout route
+// app.post("/logout", (req, res) => {
+//   // Clear the JWT token from the client-side storage
+//   res.clearCookie("token"); // Assuming the JWT token is stored in a cookie named 'jwtToken'
+
+//   // Respond with a success message
+//   res.status(200).json({ message: "Logout successful" });
+// });
+
+app.get("/api/latestpanel/data", verifyToken, (req, res) => {
+  const allowedRoles = ["Admin", "super admin", "User"];
+
+  if (!allowedRoles.includes(req.user_data.role)) {
+    return res
+      .status(403)
+      .json({ error: "Permission denied. Insufficient role." });
+  }
+
   // Use the pool to get a connection
   connection.getConnection((err, connection) => {
     if (err) {
@@ -1713,6 +1949,176 @@ function test(data) {
     console.log(err);
   }
 }
+
+function alerts(data) {
+  try {
+    var values = data.split(",");
+    var macid = data.split(",")[7];
+    var hh = values[19].substring(0, 2);
+    var mm = values[19].substring(2, 4);
+    var ss = values[19].substring(4, 6);
+    var dd = values[20].substring(0, 2);
+    var MM = values[20].substring(2, 4);
+    var yy = values[20].substring(4, 6);
+    var panelTimeUTC = new Date(
+      "20" + yy + "-" + MM + "-" + dd + " " + hh + ":" + mm + ":" + ss
+    );
+    let istDate = new Date().toLocaleString("en-US", {
+      timeZone: "Asia/Kolkata",
+    });
+    var eventCode = values[26].slice(0, 3);
+    try {
+      const queryEventCode = `SELECT event_code, description, alerts_status, alert_check FROM event_codes WHERE event_code LIKE '${eventCode}%'`;
+      connection.query(queryEventCode, (error, result) => {
+        if (error) {
+          console.log(error);
+        } else {
+          console.log(result);
+          if (
+            result.length == 1 &&
+            result[0]["alerts_status"] == 1 &&
+            result[0]["alert_check"] == 1
+          ) {
+            var description = result[0].description;
+            connection.query(
+              `SELECT AtmID, BranchName, Client, SubClient, zone${parseInt(
+                values[26].slice(-2)
+              )}_name, zone${parseInt(
+                values[26].slice(-2)
+              )}_alert_enable FROM SiteDetail WHERE PanelMacId = '${macid}'`,
+              (siteDetailsError, siteDetailsResult) => {
+                if (siteDetailsError) {
+                  console.log(siteDetailsError);
+                }
+                if (siteDetailsResult[0]) {
+                  if (
+                    parseInt(
+                      siteDetailsResult[0][
+                        `zone${parseInt(values[26].slice(-2))}_alert_enable`
+                      ].split(",")[0]
+                    ) == 1
+                  ) {
+                    var IncidentName =
+                      siteDetailsResult[0][
+                        `zone${parseInt(values[26].slice(-2))}_name`
+                      ] +
+                      " " +
+                      description;
+                    connection.query(
+                      `insert into IncidentDetail (AtmID, SiteName, Client, SubClient, IncidentName, IstTimeStamp, PanelTimeStamp, AlertType) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+                      [
+                        siteDetailsResult[0].AtmID,
+                        siteDetailsResult[0].BranchName,
+                        siteDetailsResult[0].Client,
+                        siteDetailsResult[0].SubClient,
+                        IncidentName,
+                        moment(istDate).format("YYYY-MM-DD HH:mm:ss"),
+                        moment(panelTimeUTC).format("YYYY-MM-DD HH:mm:ss"),
+                        parseInt(
+                          siteDetailsResult[0][
+                            `zone${parseInt(values[26].slice(-2))}_alert_enable`
+                          ].split(",")[1]
+                        ),
+                      ],
+                      (IncidentDetailError, IncidentDetailResult) => {
+                        if (IncidentDetailError) {
+                          console.log(IncidentDetailError);
+                        } else {
+                          console.log(IncidentDetailResult);
+                        }
+                      }
+                    );
+                  }
+                }
+              }
+            );
+          } else if (
+            result.length == 1 &&
+            result[0]["alerts_status"] == 1 &&
+            result[0]["alert_check"] == 0
+          ) {
+            var description = result[0].description;
+            connection.query(
+              `SELECT AtmID, BranchName, Client, SubClient FROM SiteDetail WHERE PanelMacId = '${macid}'`,
+              (siteDetailsError, siteDetailsResult) => {
+                if (siteDetailsError) {
+                  console.log(siteDetailsError);
+                }
+                if (siteDetailsResult[0]) {
+                  var IncidentName = description;
+                  connection.query(
+                    `insert into IncidentDetail (AtmID, SiteName, Client, SubClient, IncidentName, IstTimeStamp, PanelTimeStamp, AlertType) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+                    [
+                      siteDetailsResult[0].AtmID,
+                      siteDetailsResult[0].BranchName,
+                      siteDetailsResult[0].Client,
+                      siteDetailsResult[0].SubClient,
+                      IncidentName,
+                      moment(istDate).format("YYYY-MM-DD HH:mm:ss"),
+                      moment(panelTimeUTC).format("YYYY-MM-DD HH:mm:ss"),
+                      3,
+                    ],
+                    (IncidentDetailError, IncidentDetailResult) => {
+                      if (IncidentDetailError) {
+                        console.log(IncidentDetailError);
+                      } else {
+                        console.log(IncidentDetailResult);
+                      }
+                    }
+                  );
+                }
+              }
+            );
+          } else if (result.length > 1) {
+            for (i = 0; i < result.length; i++) {
+              if (
+                result[i].event_code == values[26] &&
+                result[i].alerts_status == 1 &&
+                result[i].alert_check == 0
+              ) {
+                var description = result[i].description;
+                connection.query(
+                  `SELECT AtmID, BranchName, Client, SubClient FROM SiteDetail WHERE PanelMacId = '${macid}'`,
+                  (siteDetailsError, siteDetailsResult) => {
+                    if (siteDetailsError) {
+                      console.log(siteDetailsError);
+                    }
+                    if (siteDetailsResult[0]) {
+                      var IncidentName = description;
+                      connection.query(
+                        `insert into IncidentDetail (AtmID, SiteName, Client, SubClient, IncidentName, IstTimeStamp, PanelTimeStamp, AlertType) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+                        [
+                          siteDetailsResult[0].AtmID,
+                          siteDetailsResult[0].BranchName,
+                          siteDetailsResult[0].Client,
+                          siteDetailsResult[0].SubClient,
+                          IncidentName,
+                          moment(istDate).format("YYYY-MM-DD HH:mm:ss"),
+                          moment(panelTimeUTC).format("YYYY-MM-DD HH:mm:ss"),
+                          3,
+                        ],
+                        (IncidentDetailError, IncidentDetailResult) => {
+                          if (IncidentDetailError) {
+                            console.log(IncidentDetailError);
+                          }
+                        }
+                      );
+                    }
+                  }
+                );
+              }
+            }
+          }
+        }
+      });
+    } catch (err) {
+      console.log(err);
+    }
+  } catch (err) {
+    console.log(err);
+  }
+}
+
 const server = net.createServer((socket) => {
   console.log("Client connected");
   socket.write(`$1lv,4,\n`);
@@ -1749,8 +2155,3 @@ app.listen(3328, () => {
 server.listen(5501, () => {
   console.log("Server started on port 5501");
 });
-
-// Alert data from socket
-// #1I,2,GAM3.4A,ATM26721,4294967295,0000235070,0000235070,44-B7-D0-AB-D2-36,180827,140224,4294967295:0000000000,0000126976:0000000000,0000000032:0000000000,*,006,046,000,0000000000,0000000032,180823,140224,00002,19132,19130,000,000,NBR006,27,
-
- 
