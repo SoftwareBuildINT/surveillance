@@ -239,7 +239,7 @@ app.post("/updateUser", async (req, res) => {
   // Destructure request body to extract user data
   const { Id, FirstName, LastName, EmailId, role, Organization, ContactNo } =
     req.body;
-
+  console.log(req.body)
   connection.query(
     `UPDATE login SET FirstName = ?, LastName = ?, EmailId = ?, role = ?, Organization = ?, ContactNo = ? WHERE Id = ?`,
     [FirstName, LastName, EmailId, role, Organization, ContactNo, Id],
