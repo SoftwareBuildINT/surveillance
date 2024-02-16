@@ -962,6 +962,8 @@ app.post("/incident", verifyToken, (req, res) => {
 //     res.status(200).json({ incident: results[0] });
 //   });
 // });
+
+// Incident details for incident page
 app.get("/get-incident", verifyToken, (req, res) => {
   const allowedRoles = ["Admin", "super admin", "User"];
 
@@ -972,6 +974,32 @@ app.get("/get-incident", verifyToken, (req, res) => {
   }
   connection.query(
     `SELECT * FROM IncidentDetail ORDER BY 1 DESC`,
+    (error, results) => {
+      if (error) {
+        console.error("Error retrieving site details:", error);
+        res.status(500).json({ error: "Internal server error" });
+        return;
+      }
+      res.json(results);
+    }
+  );
+});
+
+// Warning priority for incident page
+app.get("/incident-alerts", verifyToken, (req, res) => {
+  // const allowedRoles = ["Admin", "super admin", "User"];
+
+  // if (!allowedRoles.includes(req.user_data.role)) {
+  //   return res
+  //     .status(403)
+  //     .json({ error: "Permission denied. Insufficient role." });
+  // }
+  connection.query(
+    `SELECT 
+      SUM(CASE WHEN alertType = 1 THEN 1 ELSE 0 END) AS critical,
+      SUM(CASE WHEN alertType = 2 THEN 1 ELSE 0 END) AS warning,
+      SUM(CASE WHEN alertType = 3 THEN 1 ELSE 0 END) AS medium
+      FROM serveillance.IncidentDetail;`,
     (error, results) => {
       if (error) {
         console.error("Error retrieving site details:", error);
