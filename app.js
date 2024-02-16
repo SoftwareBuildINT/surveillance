@@ -156,13 +156,13 @@ app.get("/checkStatus", verifyToken, (req, res) => {
 //user
 app.delete("/delete-user/:Id", verifyToken, (req, res) => {
   // Check if the user has the required roles to perform this action
-  const allowedRoles = ["Admin", "super admin", "User"];
+  // const allowedRoles = ["Admin", "super admin", "User"];
 
-  if (!allowedRoles.includes(req.user_data.role)) {
-    return res
-      .status(403)
-      .json({ error: "Permission denied. Insufficient role." });
-  }
+  // if (!allowedRoles.includes(req.user_data.role)) {
+  //   return res
+  //     .status(403)
+  //     .json({ error: "Permission denied. Insufficient role." });
+  // }
 
   const Id = req.params.Id; // Retrieve siteId from URL parameters
   console.log(Id);
@@ -258,18 +258,8 @@ app.post("/updateUser", async (req, res) => {
 });
 
 app.post("/addUser", async (req, res) => {
-  const allowedRoles = ["Admin", "super admin", "User"];
-
-  // Check if the user making the request has the required role
-  if (!allowedRoles.includes(req.user_data.role)) {
-    return res
-      .status(403)
-      .json({ error: "Permission denied. Insufficient role." });
-  }
-
   // Destructure request body to extract user data
   const {
-    Id,
     FirstName,
     LastName,
     EmailId,
@@ -283,76 +273,29 @@ app.post("/addUser", async (req, res) => {
     // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Check if user data already exists in the database
+    // Insert the user data into the database
     connection.query(
-      `SELECT * FROM login WHERE Id = ?`,
-      [Id],
-      async function (err, rows) {
+      `INSERT INTO login (FirstName, LastName, EmailId, password, role, Organization, ContactNo) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [
+        FirstName,
+        LastName,
+        EmailId,
+        hashedPassword,
+        role,
+        Organization,
+        ContactNo,
+      ],
+      function (err, result) {
         if (err) {
           // Error handling for database query
           console.error(err.message);
           return res.status(500).json({ error: "Failed to add user." });
-        }
-
-        if (rows.length > 0) {
-          // User already exists, update the data
-          connection.query(
-            `UPDATE login SET FirstName = ?, LastName = ?, EmailId = ?, password = ?, role = ?, Organization = ?, ContactNo = ? WHERE Id = ?`,
-            [
-              FirstName,
-              LastName,
-              EmailId,
-              hashedPassword,
-              role,
-              Organization,
-              ContactNo,
-              Id,
-            ],
-            function (err, result) {
-              if (err) {
-                // Error handling for database query
-                console.error(err.message);
-                return res
-                  .status(500)
-                  .json({ error: "Failed to update user." });
-              } else {
-                // Successful update response
-                console.log(`User with email ${EmailId} updated successfully.`);
-                return res
-                  .status(200)
-                  .json({ message: "User updated successfully." });
-              }
-            }
-          );
         } else {
-          // User does not exist, insert the data
-          connection.query(
-            `INSERT INTO login (FirstName, LastName, EmailId, password, role, Organization, ContactNo) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [
-              FirstName,
-              LastName,
-              EmailId,
-              hashedPassword,
-              role,
-              Organization,
-              ContactNo,
-            ],
-            function (err, result) {
-              if (err) {
-                // Error handling for database query
-                console.error(err.message);
-                return res.status(500).json({ error: "Failed to add user." });
-              } else {
-                // Successful insertion response
-                console.log(
-                  `User with email ${EmailId} registered successfully.`
-                );
-                return res
-                  .status(201)
-                  .json({ message: "User registered successfully." });
-              }
-            }
-          );
+          // Successful insertion response
+          console.log(`User with email ${EmailId} registered successfully.`);
+          return res
+            .status(201)
+            .json({ message: "User registered successfully." });
         }
       }
     );
