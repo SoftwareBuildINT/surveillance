@@ -1759,8 +1759,8 @@ app.post("/logout", (req, res) => {
 
   // Send a JSON response with the redirect URL
   res.status(200).json({
-    redirectTo: "https://surveillance.uat.buildint.co/pages-login.html",
-  }); 
+    redirectTo: "./pages-login.html",
+  });
 });
 
 // Logout route
