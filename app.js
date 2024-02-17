@@ -1150,6 +1150,28 @@ app.get("/get-incident", verifyToken, (req, res) => {
   );
 });
 
+// Incident details for ramarks/action page
+app.get("/get-incident-action", verifyToken, (req, res) => {
+  const allowedRoles = ["Admin", "super admin", "User"];
+
+  if (!allowedRoles.includes(req.user_data.role)) {
+    return res
+      .status(403)
+      .json({ error: "Permission denied. Insufficient role." });
+  }
+  connection.query(
+    `SELECT * FROM IncidentDetail  WHERE alert_status = 1 ORDER BY 1 DESC;`,
+    (error, results) => {
+      if (error) {
+        console.error("Error retrieving site details:", error);
+        res.status(500).json({ error: "Internal server error" });
+        return;
+      }
+      res.json(results);
+    }
+  );
+});
+
 // Warning priority for incident page
 app.get("/incident-alerts", verifyToken, (req, res) => {
   // const allowedRoles = ["Admin", "super admin", "User"];
