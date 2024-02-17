@@ -1629,7 +1629,7 @@ app.get("/get-client", verifyToken, (req, res) => {
       .json({ error: "Permission denied. Insufficient role." });
   }
   connection.query(
-    `SELECT distinct(OrgName) as client FROM Organization;`,
+    `SELECT  distinct(OrgName) as client,OrgId FROM Organization;`,
     (error, results) => {
       if (error) {
         console.error("Error retrieving site details:", error);
@@ -1651,7 +1651,7 @@ app.get("/get-subClient", verifyToken, (req, res) => {
       .json({ error: "Permission denied. Insufficient role." });
   }
   connection.query(
-    `SELECT distinct(SubClient) FROM Organization;`,
+    `SELECT distinct(SubClient), OrgId FROM Organization;`,
     (error, results) => {
       if (error) {
         console.error("Error retrieving site details:", error);
