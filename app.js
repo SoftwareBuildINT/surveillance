@@ -239,7 +239,7 @@ app.post("/updateUser", async (req, res) => {
   // Destructure request body to extract user data
   const { Id, FirstName, LastName, EmailId, role, Organization, ContactNo } =
     req.body;
-  console.log(req.body)
+  console.log(req.body);
   connection.query(
     `UPDATE login SET FirstName = ?, LastName = ?, EmailId = ?, role = ?, Organization = ?, ContactNo = ? WHERE Id = ?`,
     [FirstName, LastName, EmailId, role, Organization, ContactNo, Id],
@@ -1758,7 +1758,9 @@ app.post("/logout", (req, res) => {
   res.setHeader("Authorization", "");
 
   // Send a JSON response with the redirect URL
-  res.status(200).json({ redirectTo: "/surveillance_uat/pages-login.html" });
+  res.status(200).json({
+    redirectTo: "https://surveillance.uat.buildint.co/pages-login.html",
+  });
 });
 
 // Logout route
@@ -1797,7 +1799,7 @@ app.get("/api/latestpanel/data", verifyToken, (req, res) => {
       }
 
       // Send the fetched data as JSON response
-      res.json({ latest_data: results[0] }); 
+      res.json({ latest_data: results[0] });
     });
   });
 });
@@ -2101,7 +2103,7 @@ function alerts(data) {
       timeZone: "Asia/Kolkata",
     });
     var eventCode = values[26].slice(0, 3);
-    console.log(eventCode)
+    console.log(eventCode);
     try {
       const queryEventCode = `SELECT event_code, description, alerts_status, alert_check FROM event_codes WHERE event_code LIKE '${eventCode}%'`;
       connection.query(queryEventCode, (error, result) => {
