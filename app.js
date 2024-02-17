@@ -1133,29 +1133,27 @@ app.get("/get-incidents", verifyToken, (req, res) => {
   const allowedRoles = ["Admin", "super admin", "User"];
 
   if (!allowedRoles.includes(req.user_data.role)) {
-    return res
-      .status(403)
-      .json({ error: "Permission denied. Insufficient role." });
+    return res.status(403).json({ error: "Permission denied. Insufficient role." });
   }
 
-  let query = `SELECT * FROM IncidentDetail`;
+  let query = `SELECT i.*, o.OrgName as ClientName, o.SubClient as SubClientName FROM IncidentDetail i JOIN Organization o ON i.Client = o.OrgId`;
 
   // Check if specific type of incidents is requested
   if (req.query.type === "action") {
-    query += ` WHERE alert_status = 1`;
+    query += ` WHERE i.alert_status = 1`;
   }
 
-  query += ` ORDER BY 1 DESC`;
+  query += ` ORDER BY i.IncidentNo DESC`;
 
   connection.query(query, (error, results) => {
     if (error) {
       console.error("Error retrieving incident details:", error);
-      res.status(500).json({ error: "Internal server error" });
-      return;
+      return res.status(500).json({ error: "Internal server error" });
     }
     res.json(results);
   });
 });
+
 
 // Warning priority for incident page
 app.get("/incident-alerts", verifyToken, (req, res) => {
