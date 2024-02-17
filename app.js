@@ -1678,7 +1678,8 @@ app.post("/update-incidentmodal/:incidentNo", verifyToken, async (req, res) => {
     const updateQuery = `
       UPDATE IncidentDetail
       SET Remark = ?,
-          user_id = ?
+          user_id = ?, 
+          alert_status = 2
       WHERE IncidentNo = ?;
     `;
 
