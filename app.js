@@ -1154,7 +1154,7 @@ app.get("/get-incidents", verifyToken, (req, res) => {
   });
 });
 
-app.get('/incidentslive', (req, res) => {
+app.get('/incidentslive', verifyToken, (req, res) => {
   const incidentNo = req.query.incidentNo;
   const atmId = incidentNo // Assuming the ATM ID starts from the second character
   console.log(incidentNo)
@@ -1163,7 +1163,7 @@ app.get('/incidentslive', (req, res) => {
   const sqlQuery = `
   SELECT i.AtmId as AtmId,s.BranchName as address,i.IncidentNo as Incidentno,i.IstTimeStamp as opentime,i.IncidentName as alert, o.OrgName as ClientName, o.SubClient as SubClientName,s.FireBrigadeContact as fire, 
   s.HospitalContact as hospital,s.PoliceContact as police FROM IncidentDetail i 
-  JOIN Organization o ON i.Client = o.OrgId JOIN SiteDetail s ON i.AtmId = s.AtmId  WHERE i.AtmId = ?;
+  JOIN Organization o ON i.Client = o.OrgId JOIN SiteDetail s ON i.AtmId = s.AtmId  WHERE i.AtmId = ? order by Incidentno desc;
  `;
 
   connection.query(sqlQuery, [atmId], (error, results, fields) => {
