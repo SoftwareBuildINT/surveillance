@@ -1154,7 +1154,7 @@ app.get("/get-incidents", verifyToken, (req, res) => {
   });
 });
 
-app.get('/incidentslive', verifyToken, (req, res) => {
+app.get('/incidentslive', (req, res) => {
   const incidentNo = req.query.incidentNo;
   const atmId = incidentNo // Assuming the ATM ID starts from the second character
   console.log(incidentNo)
