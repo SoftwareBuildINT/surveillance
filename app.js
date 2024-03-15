@@ -1815,25 +1815,22 @@ app.get("/get-panelMake", verifyToken, (req, res) => {
 });
 
 // Get Panel Type information
-app.get("/get-panelType", verifyToken, (req, res) => {
-  const allowedRoles = ["Admin", "super admin", "User"];
+app.get("/get-panelType", (req, res) => {
+  // const allowedRoles = ["Admin", "super admin", "User"];
 
-  if (!allowedRoles.includes(req.user_data.role)) {
-    return res
-      .status(403)
-      .json({ error: "Permission denied. Insufficient role." });
-  }
-  connection.query(
-    `SELECT PanelTypeId, PanelTypeName FROM PanelType;`,
-    (error, results) => {
-      if (error) {
-        console.error("Error retrieving site details:", error);
-        res.status(500).json({ error: "Internal server error" });
-        return;
-      }
-      res.json(results);
+  // if (!allowedRoles.includes(req.user_data.role)) {
+  //   return res
+  //     .status(403)
+  //     .json({ error: "Permission denied. Insufficient role." });
+  // }
+  connection.query(`SELECT * FROM PanelType;`, (error, results) => {
+    if (error) {
+      console.error("Error retrieving site details:", error);
+      res.status(500).json({ error: "Internal server error" });
+      return;
     }
-  );
+    res.json(results);
+  });
 });
 
 app.post("/logout", (req, res) => {
