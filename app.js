@@ -568,8 +568,42 @@ app.post("/addsite", verifyToken, (req, res) => {
     Region,
     DVR,
     SiteAddress,
-    QrtNo
+    QrtNo,
   } = req.body;
+
+  // ,
+  // zone1_name,
+  // zone2_name,
+  // zone3_name,
+  // zone4_name,
+  // zone5_name,
+  // zone6_name,
+  // zone7_name,
+  // zone8_name,
+  // zone9_name,
+  // zone10_name,
+  // zone11_name,
+  // zone12_name,
+  // zone13_name,
+  // zone14_name,
+  // zone15_name,
+  // zone16_name,
+  // zone17_name,
+  // zone18_name,
+  // zone19_name,
+  // zone20_name,
+  // zone21_name,
+  // zone22_name,
+  // zone23_name,
+  // zone24_name,
+  // zone25_name,
+  // zone26_name,
+  // zone27_name,
+  // zone28_name,
+  // zone29_name,
+  // zone30_name,
+  // zone31_name,
+  // zone32_name,
 
   if (!allowedRoles.includes(req.user_data.role)) {
     return res
@@ -1140,7 +1174,9 @@ app.get("/get-incidents", verifyToken, (req, res) => {
   const allowedRoles = ["Admin", "super admin", "User"];
 
   if (!allowedRoles.includes(req.user_data.role)) {
-    return res.status(403).json({ error: "Permission denied. Insufficient role." });
+    return res
+      .status(403)
+      .json({ error: "Permission denied. Insufficient role." });
   }
 
   let query = `SELECT i.*, o.OrgName as ClientName, o.SubClient as SubClientName FROM IncidentDetail i JOIN Organization o ON i.Client = o.OrgId`;
@@ -1161,11 +1197,11 @@ app.get("/get-incidents", verifyToken, (req, res) => {
   });
 });
 
-app.get('/incidentslive', (req, res) => {
+app.get("/incidentslive", (req, res) => {
   const incidentNo = req.query.incidentNo;
-  const atmId = incidentNo // Assuming the ATM ID starts from the second character
-  console.log(incidentNo)
-  console.log(atmId)
+  const atmId = incidentNo; // Assuming the ATM ID starts from the second character
+  console.log(incidentNo);
+  console.log(atmId);
 
   const sqlQuery = `
   SELECT i.AtmId as AtmId,s.BranchName as address,i.IncidentNo as Incidentno,i.IstTimeStamp as opentime,i.IncidentName as alert, o.OrgName as ClientName, o.SubClient as SubClientName,s.FireBrigadeContact as fire, 
@@ -1175,8 +1211,8 @@ app.get('/incidentslive', (req, res) => {
 
   connection.query(sqlQuery, [atmId], (error, results, fields) => {
     if (error) {
-      console.error('Error executing SQL query:', error);
-      res.status(500).json({ error: 'Internal Server Error' });
+      console.error("Error executing SQL query:", error);
+      res.status(500).json({ error: "Internal Server Error" });
       return;
     }
 
@@ -1208,6 +1244,20 @@ app.get("/incident-alerts", verifyToken, (req, res) => {
       res.json(results);
     }
   );
+});
+
+app.get("/panel-type/:id", (req, res) => {
+  let id = req.params.id;
+  let query = `SELECT * FROM serveillance.PanelType WHERE PanelTypeId = ?;`;
+
+  connection.query(query, [id], (err, results) => {
+    if (err) {
+      console.log("Cannot get panel type");
+      res.status(500).json({ error: "Internal Server Error" });
+      return;
+    }
+    res.json(results);
+  });
 });
 
 // Define your API endpoint
@@ -1886,22 +1936,38 @@ function test(data) {
                     connection.query(
                       `update LatestData set macid = '${macid}', 
                       AtmID = '${AtmID}',
-                      zone1_status = '${z[0]}', zone2_status = '${z[1]
-                      }', zone3_status = '${z[2]}', zone4_status = '${z[3]
-                      }', zone5_status = '${z[4]}', zone6_status = '${z[5]
-                      }', zone7_status = '${z[6]}', zone8_status = '${z[7]
-                      }', zone9_status = '${z[8]}', zone10_status = '${z[9]
-                      }', zone11_status = '${z[10]}', zone12_status = '${z[11]
-                      }', zone13_status = '${z[12]}', zone14_status = '${z[13]
-                      }', zone15_status = '${z[14]}', zone16_status = '${z[15]
-                      }', zone17_status = '${z[16]}', zone18_status = '${z[17]
-                      }', zone19_status = '${z[18]}', zone20_status = '${z[19]
-                      }', zone21_status = '${z[20]}', zone22_status = '${z[21]
-                      }', zone23_status = '${z[22]}', zone24_status = '${z[23]
-                      }', zone25_status = '${z[24]}', zone26_status = '${z[25]
-                      }', zone27_status = '${z[26]}', zone28_status = '${z[27]
-                      }', zone29_status = '${z[28]}', zone30_status = '${z[29]
-                      }', zone31_status = '${z[30]}', zone32_status = '${z[31]
+                      zone1_status = '${z[0]}', zone2_status = '${
+                        z[1]
+                      }', zone3_status = '${z[2]}', zone4_status = '${
+                        z[3]
+                      }', zone5_status = '${z[4]}', zone6_status = '${
+                        z[5]
+                      }', zone7_status = '${z[6]}', zone8_status = '${
+                        z[7]
+                      }', zone9_status = '${z[8]}', zone10_status = '${
+                        z[9]
+                      }', zone11_status = '${z[10]}', zone12_status = '${
+                        z[11]
+                      }', zone13_status = '${z[12]}', zone14_status = '${
+                        z[13]
+                      }', zone15_status = '${z[14]}', zone16_status = '${
+                        z[15]
+                      }', zone17_status = '${z[16]}', zone18_status = '${
+                        z[17]
+                      }', zone19_status = '${z[18]}', zone20_status = '${
+                        z[19]
+                      }', zone21_status = '${z[20]}', zone22_status = '${
+                        z[21]
+                      }', zone23_status = '${z[22]}', zone24_status = '${
+                        z[23]
+                      }', zone25_status = '${z[24]}', zone26_status = '${
+                        z[25]
+                      }', zone27_status = '${z[26]}', zone28_status = '${
+                        z[27]
+                      }', zone29_status = '${z[28]}', zone30_status = '${
+                        z[29]
+                      }', zone31_status = '${z[30]}', zone32_status = '${
+                        z[31]
                       }', panel_evt_dt = '${formattedDate}', ist_evt_dt = '${moment(
                         istDate
                       ).format(
@@ -1946,9 +2012,9 @@ function test(data) {
                                 if (
                                   (zoneAStatus == null || zoneAStatus == 3) &&
                                   z[i] ==
-                                  (zoneNum > 9
-                                    ? `${zoneNum}RA`
-                                    : `0${zoneNum}RA`)
+                                    (zoneNum > 9
+                                      ? `${zoneNum}RA`
+                                      : `0${zoneNum}RA`)
                                 ) {
                                   connection.query(
                                     `update LatestData set zone${zoneNum}_Astatus = "1,${formattedDate},${moment(
@@ -1965,9 +2031,9 @@ function test(data) {
                                 } else if (
                                   (zoneAStatus == 1 || zoneAStatus == null) &&
                                   z[i] ==
-                                  (zoneNum > 9
-                                    ? `${zoneNum}AA`
-                                    : `0${zoneNum}AA`)
+                                    (zoneNum > 9
+                                      ? `${zoneNum}AA`
+                                      : `0${zoneNum}AA`)
                                 ) {
                                   connection.query(
                                     `update LatestData set zone${zoneNum}_Astatus = "2,${formattedDate},${moment(
@@ -1993,13 +2059,20 @@ function test(data) {
                   else {
                     connection.query(
                       `INSERT INTO LatestData (macid, SiteId, AtmID, zone1_status, zone2_status, zone3_status, zone4_status, zone5_status, zone6_status, zone7_status, zone8_status, zone9_status, zone10_status, zone11_status, zone12_status, zone13_status, zone14_status, zone15_status, zone16_status, zone17_status, zone18_status, zone19_status, zone20_status, zone21_status, zone22_status, zone23_status, zone24_status, zone25_status, zone26_status, zone27_status, zone28_status, zone29_status, zone30_status, zone31_status, zone32_status, panel_evt_dt, ist_evt_dt) 
-                      VALUES ('${macid}', '${SiteId}', '${AtmID}', '${z[0]
-                      }', '${z[1]}', '${z[2]}', '${z[3]}', '${z[4]}','${z[5]
-                      }','${z[6]}','${z[7]}','${z[8]}','${z[9]}','${z[10]}','${z[11]
-                      }','${z[12]}','${z[13]}','${z[14]}','${z[15]}','${z[16]
-                      }','${z[17]}', '${z[18]}','${z[19]}','${z[20]}','${z[21]
-                      }','${z[22]}','${z[23]}','${z[24]}','${z[25]}','${z[26]
-                      }','${z[27]}','${z[28]}','${z[29]}','${z[30]}','${z[31]
+                      VALUES ('${macid}', '${SiteId}', '${AtmID}', '${
+                        z[0]
+                      }', '${z[1]}', '${z[2]}', '${z[3]}', '${z[4]}','${
+                        z[5]
+                      }','${z[6]}','${z[7]}','${z[8]}','${z[9]}','${z[10]}','${
+                        z[11]
+                      }','${z[12]}','${z[13]}','${z[14]}','${z[15]}','${
+                        z[16]
+                      }','${z[17]}', '${z[18]}','${z[19]}','${z[20]}','${
+                        z[21]
+                      }','${z[22]}','${z[23]}','${z[24]}','${z[25]}','${
+                        z[26]
+                      }','${z[27]}','${z[28]}','${z[29]}','${z[30]}','${
+                        z[31]
                       }', '${formattedDate}', '${moment(istDate).format(
                         "YYYY-MM-DD HH:mm:ss"
                       )}')`,
@@ -2043,9 +2116,9 @@ function test(data) {
                                 if (
                                   (zoneAStatus == null || zoneAStatus == 3) &&
                                   z[i] ==
-                                  (zoneNum > 9
-                                    ? `${zoneNum}RA`
-                                    : `0${zoneNum}RA`)
+                                    (zoneNum > 9
+                                      ? `${zoneNum}RA`
+                                      : `0${zoneNum}RA`)
                                 ) {
                                   connection.query(
                                     `update LatestData set zone${zoneNum}_Astatus = "1,${formattedDate},${moment(
@@ -2062,9 +2135,9 @@ function test(data) {
                                 } else if (
                                   (zoneAStatus == 1 || zoneAStatus == null) &&
                                   z[i] ==
-                                  (zoneNum > 9
-                                    ? `${zoneNum}AA`
-                                    : `0${zoneNum}AA`)
+                                    (zoneNum > 9
+                                      ? `${zoneNum}AA`
+                                      : `0${zoneNum}AA`)
                                 ) {
                                   connection.query(
                                     `update LatestData set zone${zoneNum}_Astatus = "2,${formattedDate},${moment(
@@ -2150,7 +2223,7 @@ function alerts(data) {
                   ) {
                     var IncidentName =
                       siteDetailsResult[0][
-                      `zone${parseInt(values[26].slice(-2))}_name`
+                        `zone${parseInt(values[26].slice(-2))}_name`
                       ] +
                       " " +
                       description;
