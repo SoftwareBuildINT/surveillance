@@ -587,10 +587,15 @@ app.post("/addsite", verifyToken, (req, res) => {
     // Check if zone data exists
     if (zoneInput && alert && alertName) {
       // Push zone data to the zones array with dynamic keys
-      const zoneData = {};
-      zoneData[`zone${i}_name`] = zoneInput;
-      zoneData[`zone${i}_alert_enable`] = `${alert},${alertName}`;
-      zones.push(zoneData);
+      // const zoneData = {};
+      // zoneData[`zone${i}_name`] = zoneInput;
+      // zoneData[`zone${i}_alert_enable`] = `${alert},${alertName}`;
+      // zones.push(zoneData);
+
+      zones.push({
+        zone_name: zoneInput,
+        zone_alert_enable: `${alert},${alertName}`,
+      });
     }
   }
 
@@ -870,6 +875,8 @@ app.post("/addsite", verifyToken, (req, res) => {
       .fill("?")
       .join(", ")})`;
 
+      console.log(insertSQL);
+
       const insertValues = [
         SiteId,
         AtmID,
@@ -895,11 +902,11 @@ app.post("/addsite", verifyToken, (req, res) => {
         Region,
         QrtNo,
         SiteAddress,
-        ...zones.flatMap((zone) => [
-          zone[`zone${i + 1}_name`],
-          zone[`zone${i + 1}_alert_enabled`],
-        ]),
+        ...zones.map((zone) => [zone.zone_name]).flat(),
+        ...zones.map((zone) => [zone.zone_alert_enable]).flat(),
       ];
+
+      console.log(insertValues);
 
       connection.query(insertSQL, insertValues, (insertErr, insertResults) => {
         if (insertErr) {
