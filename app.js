@@ -226,6 +226,48 @@ app.delete("/delete-site/:siteId", verifyToken, (req, res) => {
   });
 });
 
+// Update site status
+app.post("/update-status/:siteId/:status", (req, res) => {
+  // Check if the user has the required roles to perform this action
+  // const allowedRoles = ["Admin", "super admin", "User"];
+
+  // if (!allowedRoles.includes(req.user_data.role)) {
+  //   return res
+  //     .status(403)
+  //     .json({ error: "Permission denied. Insufficient role." });
+  // }
+
+  const siteId = req.params.siteId;
+  const status = req.params.status; // Retrieve siteId from URL parameters
+  console.log(siteId);
+  console.log(status);
+
+  let sql;
+
+  if (status == "1") {
+    sql = "UPDATE SiteDetail SET Status = 2 WHERE SiteId = ?;";
+  } else if (status == "2") {
+    sql = "UPDATE SiteDetail SET Status = 1 WHERE SiteId = ?;";
+  }
+  console.log(sql);
+
+  // Execute the SQL query with the specified site ID
+  connection.query(sql, [siteId], (err, results) => {
+    if (err) {
+      console.error("Error updating site from MySQL:", err);
+      return res.status(500).json({ message: "Error updating status" });
+    }
+
+    // Check if any rows were affected (i.e., if the site was deleted)
+    if (results.affectedRows === 0) {
+      return res.status(404).json({ message: "Site not found." });
+    }
+
+    // Respond with a success message
+    return res.json({ message: "Status updated successfully" });
+  });
+});
+
 app.post("/updateUser", async (req, res) => {
   const allowedRoles = ["Admin", "super admin", "User"];
 
