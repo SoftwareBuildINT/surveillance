@@ -104,7 +104,7 @@ app.get("/profile", verifyToken, (req, res) => {
   });
 });
 
-app.get("/checkStatus",verifyToken, (req, res) => {
+app.get("/checkStatus", verifyToken, (req, res) => {
   const allowedRoles = ["Admin", "super admin", "User"];
 
   if (!allowedRoles.includes(req.user_data.role)) {
@@ -134,12 +134,16 @@ app.get("/checkStatus",verifyToken, (req, res) => {
             AtmID: result.AtmID,
             BranchName: result.BranchName,
             status: isOnline ? "online" : "offline",
-            evt_dt: result.ist_evt_dt // Include event date
+            evt_dt: result.ist_evt_dt, // Include event date
           };
         });
 
-        const onlineATMs = atmStatusList.filter(atm => atm.status === 'online');
-        const offlineATMs = atmStatusList.filter(atm => atm.status === 'offline');
+        const onlineATMs = atmStatusList.filter(
+          (atm) => atm.status === "online"
+        );
+        const offlineATMs = atmStatusList.filter(
+          (atm) => atm.status === "offline"
+        );
 
         const totalATMs = atmStatusList.length;
         const panelonlineCount = onlineATMs.length;
@@ -158,8 +162,6 @@ app.get("/checkStatus",verifyToken, (req, res) => {
     }
   );
 });
-
-
 
 //user
 app.delete("/delete-user/:Id", verifyToken, (req, res) => {
@@ -1035,7 +1037,7 @@ app.get("/total-location", verifyToken, (req, res) => {
   }
 
   connection.query(
-    "SELECT COUNT(AtmID) as total_location FROM SiteDetail;",
+    "SELECT COUNT(AtmID) as total_location FROM SiteDetail WHERE Status = 1;",
     (error, results) => {
       if (error) {
         console.error("Error retrieving total number of Locations:", error);
@@ -1058,7 +1060,7 @@ app.get("/total-panel", verifyToken, (req, res) => {
   }
 
   connection.query(
-    "SELECT COUNT(PanelMake) as panelCount FROM  SiteDetail;",
+    "SELECT COUNT(PanelMake) as panelCount FROM  SiteDetail  WHERE Status = 1;",
     (error, results) => {
       if (error) {
         console.error("Error retrieving total number of Panel Count:", error);
