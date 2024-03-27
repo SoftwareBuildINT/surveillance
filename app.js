@@ -237,15 +237,15 @@ app.delete("/delete-site/:siteId", verifyToken, (req, res) => {
 });
 
 // Update site status
-app.post("/update-status/:siteId/:status", (req, res) => {
+app.post("/update-status/:siteId/:status", verifyToken, (req, res) => {
   // Check if the user has the required roles to perform this action
-  // const allowedRoles = ["Admin", "super admin", "User"];
+  const allowedRoles = ["Admin", "super admin", "User"];
 
-  // if (!allowedRoles.includes(req.user_data.role)) {
-  //   return res
-  //     .status(403)
-  //     .json({ error: "Permission denied. Insufficient role." });
-  // }
+  if (!allowedRoles.includes(req.user_data.role)) {
+    return res
+      .status(403)
+      .json({ error: "Permission denied. Insufficient role." });
+  }
 
   const siteId = req.params.siteId;
   const status = req.params.status; // Retrieve siteId from URL parameters
