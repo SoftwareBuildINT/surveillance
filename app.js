@@ -104,7 +104,7 @@ app.get("/profile", verifyToken, (req, res) => {
   });
 });
 
-app.get("/checkStatus", verifyToken, (req, res) => {
+app.get("/checkStatus",verifyToken, (req, res) => {
   const allowedRoles = ["Admin", "super admin", "User"];
 
   if (!allowedRoles.includes(req.user_data.role)) {
@@ -114,7 +114,7 @@ app.get("/checkStatus", verifyToken, (req, res) => {
   }
 
   connection.query(
-    "SELECT SiteDetail.AtmID, LatestData.ist_evt_dt FROM SiteDetail JOIN LatestData ON SiteDetail.SiteId = LatestData.SiteId;",
+    "SELECT SiteDetail.AtmID, SiteDetail.BranchName, LatestData.ist_evt_dt FROM SiteDetail JOIN LatestData ON SiteDetail.SiteId = LatestData.SiteId;",
     (err, results) => {
       if (err) {
         console.error("Error querying database:", err);
@@ -126,32 +126,40 @@ app.get("/checkStatus", verifyToken, (req, res) => {
         const currentTime = new Date();
         const fifteenMinutesInMillis = 15 * 60 * 1000;
 
-        const panelonlineCount = results.reduce((count, result) => {
-          const timeDifference = currentTime - result.ist_evt_dt;
-          const isOnline = timeDifference <= fifteenMinutesInMillis;
-          return count + (isOnline ? 1 : 0);
-        }, 0);
-
-        const panelofflineCount = results.length - panelonlineCount;
-
         const atmStatusList = results.map((result) => {
           const timeDifference = currentTime - result.ist_evt_dt;
           const isOnline = timeDifference <= fifteenMinutesInMillis;
+
           return {
             AtmID: result.AtmID,
+            BranchName: result.BranchName,
             status: isOnline ? "online" : "offline",
+            evt_dt: result.ist_evt_dt // Include event date
           };
         });
 
-        const totalATMs = results.length;
+        const onlineATMs = atmStatusList.filter(atm => atm.status === 'online');
+        const offlineATMs = atmStatusList.filter(atm => atm.status === 'offline');
 
-        res.json({ totalATMs, panelonlineCount, panelofflineCount });
+        const totalATMs = atmStatusList.length;
+        const panelonlineCount = onlineATMs.length;
+        const panelofflineCount = offlineATMs.length;
+
+        res.json({
+          totalATMs,
+          panelonlineCount,
+          panelofflineCount,
+          onlineATMs,
+          offlineATMs,
+        });
       } else {
         res.status(404).json({ error: "Data not found" });
       }
     }
   );
 });
+
+
 
 //user
 app.delete("/delete-user/:Id", verifyToken, (req, res) => {
