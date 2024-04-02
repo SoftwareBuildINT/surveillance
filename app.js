@@ -907,14 +907,29 @@ app.get("/get-incidents", verifyToken, (req, res) => {
       .json({ error: "Permission denied. Insufficient role." });
   }
 
-  let query = `SELECT i.*, o.OrgName as ClientName, o.SubClient as SubClientName FROM IncidentDetail i JOIN Organization o ON i.Client = o.OrgId`;
+  let query = `SELECT i1.*, o.OrgName as ClientName, o.SubClient as SubClientName
+              FROM serveillance.IncidentDetail AS i1
+              JOIN Organization o ON i1.Client = o.OrgId 
+              WHERE (i1.AtmId, i1.IncidentName, i1.IncidentNo) IN (
+                SELECT AtmId, IncidentName, MAX(IncidentNo)
+                FROM serveillance.IncidentDetail
+                GROUP BY AtmId, IncidentName
+                )
+              ORDER BY 1 DESC;`;
 
   // Check if specific type of incidents is requested
   if (req.query.type === "action") {
-    query += ` WHERE i.alert_status = 1`;
+    query = `SELECT i1.*, o.OrgName as ClientName, o.SubClient as SubClientName
+            FROM serveillance.IncidentDetail AS i1
+            JOIN Organization o ON i1.Client = o.OrgId 
+            WHERE i1.alert_status = 1 AND (i1.AtmId, i1.IncidentName, i1.IncidentNo) IN (
+              SELECT AtmId, IncidentName, MAX(IncidentNo)
+              FROM serveillance.IncidentDetail
+              GROUP BY AtmId, IncidentName
+              )
+              ORDER BY 1 DESC;`;
   }
 
-  query += ` ORDER BY i.IncidentNo DESC`;
 
   connection.query(query, (error, results) => {
     if (error) {
