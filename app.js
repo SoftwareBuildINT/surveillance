@@ -939,20 +939,41 @@ app.get("/get-incidents", verifyToken, (req, res) => {
     res.json(results);
   });
 });
-
 app.get("/incidentslive", (req, res) => {
   const incidentNo = req.query.incidentNo;
-  const atmId = incidentNo; // Assuming the ATM ID starts from the second character
+  const incident_name = req.query.incident_name;
+  const atmId = incidentNo;
+  console.log(incident_name);
   console.log(incidentNo);
   console.log(atmId);
 
   const sqlQuery = `
-  SELECT i.AtmId as AtmId,s.BranchName as address,i.IncidentNo as Incidentno,i.IstTimeStamp as opentime,i.IncidentName as alert, o.OrgName as ClientName, o.SubClient as SubClientName,s.FireBrigadeContact as fire, 
-  s.HospitalContact as hospital,s.PoliceContact as police FROM IncidentDetail i 
-  JOIN Organization o ON i.Client = o.OrgId JOIN SiteDetail s ON i.AtmId = s.AtmId  WHERE i.AtmId = ? order by Incidentno desc;
+  SELECT 
+    i.AtmId as AtmId,
+    s.BranchName as branch_name,
+    s.SiteAddress as address,
+    i.IncidentNo as Incidentno,
+    i.IstTimeStamp as opentime,
+    i.IncidentName as alert,
+    o.OrgName as ClientName,
+    o.SubClient as SubClientName,
+    s.FireBrigadeContact as fire, 
+    s.HospitalContact as hospital,
+    s.PoliceContact as police 
+  FROM 
+    IncidentDetail i 
+  JOIN 
+    Organization o ON i.Client = o.OrgId 
+  JOIN 
+    SiteDetail s ON i.AtmId = s.AtmId  
+  WHERE 
+    i.AtmId = ?
+    AND i.IncidentName = ?
+  ORDER BY 
+    Incidentno DESC;
  `;
 
-  connection.query(sqlQuery, [atmId], (error, results, fields) => {
+  connection.query(sqlQuery, [atmId, incident_name], (error, results, fields) => {
     if (error) {
       console.error("Error executing SQL query:", error);
       res.status(500).json({ error: "Internal Server Error" });
@@ -962,6 +983,7 @@ app.get("/incidentslive", (req, res) => {
     res.json(results);
   });
 });
+
 
 // Warning priority for incident page
 app.get("/incident-alerts", verifyToken, (req, res) => {
