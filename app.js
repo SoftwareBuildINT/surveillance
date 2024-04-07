@@ -956,6 +956,7 @@ app.get("/incidentslive", (req, res) => {
     i.IstTimeStamp as opentime,
     i.IncidentName as alert,
     i.alert_status as action_status,
+    i.AlertType,
     i.Remark,
     o.OrgName as ClientName,
     o.SubClient as SubClientName,
