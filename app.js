@@ -1461,6 +1461,8 @@ app.delete("/deleteclient/:OrgId", verifyToken, (req, res) => {
   });
 });
 
+//
+
 // app.get("/total-panel", verifyToken, (req, res) => {
 //   const allowedRoles = ["Admin", "super admin", "User"];
 
