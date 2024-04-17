@@ -1092,28 +1092,28 @@ app.get("/total-location", verifyToken, (req, res) => {
   );
 });
 
-// app.get("/total-panel", verifyToken, (req, res) => {
-//   const allowedRoles = ["Admin", "super admin", "User"];
+app.get("/total-panel", verifyToken, (req, res) => {
+  const allowedRoles = ["Admin", "super admin", "User"];
 
-//   if (!allowedRoles.includes(req.user_data.role)) {
-//     return res
-//       .status(403)
-//       .json({ error: "Permission denied. Insufficient role." });
-//   }
+  if (!allowedRoles.includes(req.user_data.role)) {
+    return res
+      .status(403)
+      .json({ error: "Permission denied. Insufficient role." });
+  }
 
-//   connection.query(
-//     "SELECT COUNT(PanelMake) as panelCount FROM  SiteDetail  WHERE Status = 1;",
-//     (error, results) => {
-//       if (error) {
-//         console.error("Error retrieving total number of Panel Count:", error);
-//         res.status(500).json({ error: "Internal server error" });
-//         return;
-//       }
-//       const panelCount = results[0].panelCount;
-//       res.json({ panelCount });
-//     }
-//   );
-// });
+  connection.query(
+    "SELECT COUNT(PanelMake) as panelCount FROM  SiteDetail  WHERE Status = 1;",
+    (error, results) => {
+      if (error) {
+        console.error("Error retrieving total number of Panel Count:", error);
+        res.status(500).json({ error: "Internal server error" });
+        return;
+      }
+      const panelCount = results[0].panelCount;
+      res.json({ panelCount });
+    }
+  );
+});
 
 app.get("/map-marker", (req, res) => {
   connection.query(
@@ -1461,33 +1461,33 @@ app.delete("/deleteclient/:OrgId", verifyToken, (req, res) => {
   });
 });
 
-app.get("/total-panel", verifyToken, (req, res) => {
-  const allowedRoles = ["Admin", "super admin", "User"];
+// app.get("/total-panel", verifyToken, (req, res) => {
+//   const allowedRoles = ["Admin", "super admin", "User"];
 
-  if (!allowedRoles.includes(req.user_data.role)) {
-    return res
-      .status(403)
-      .json({ error: "Permission denied. Insufficient role." });
-  }
+//   if (!allowedRoles.includes(req.user_data.role)) {
+//     return res
+//       .status(403)
+//       .json({ error: "Permission denied. Insufficient role." });
+//   }
 
-  connection.query(
-    `
-    SELECT count(PanelMake) as panelCount,
-    SUM(CASE WHEN Status = 1 THEN 1 ELSE 0 END) AS active,
-    SUM(CASE WHEN Status = 0 THEN 1 ELSE 0 END) AS not_active
-    FROM SiteDetail;
-  `,
-    (error, results) => {
-      if (error) {
-        console.error("Error retrieving total number of Panel Count:", error);
-        res.status(500).json({ error: "Internal server error" });
-        return;
-      }
-      const panelCount = results[0].panelCount;
-      res.json({ panelCount });
-    }
-  );
-});
+//   connection.query(
+//     `
+//     SELECT count(PanelMake) as panelCount,
+//     SUM(CASE WHEN Status = 1 THEN 1 ELSE 0 END) AS active,
+//     SUM(CASE WHEN Status = 0 THEN 1 ELSE 0 END) AS not_active
+//     FROM SiteDetail;
+//   `,
+//     (error, results) => {
+//       if (error) {
+//         console.error("Error retrieving total number of Panel Count:", error);
+//         res.status(500).json({ error: "Internal server error" });
+//         return;
+//       }
+//       const panelCount = results[0].panelCount;
+//       res.json({ panelCount });
+//     }
+//   );
+// });
 
 // Get client information
 app.get("/get-client", verifyToken, (req, res) => {
