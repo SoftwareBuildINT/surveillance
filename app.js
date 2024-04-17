@@ -930,7 +930,6 @@ app.get("/get-incidents", verifyToken, (req, res) => {
               ORDER BY 1 DESC;`;
   }
 
-
   connection.query(query, (error, results) => {
     if (error) {
       console.error("Error retrieving incident details:", error);
@@ -976,17 +975,20 @@ app.get("/incidentslive", (req, res) => {
     Incidentno DESC;
  `;
 
-  connection.query(sqlQuery, [atmId, incident_name], (error, results, fields) => {
-    if (error) {
-      console.error("Error executing SQL query:", error);
-      res.status(500).json({ error: "Internal Server Error" });
-      return;
+  connection.query(
+    sqlQuery,
+    [atmId, incident_name],
+    (error, results, fields) => {
+      if (error) {
+        console.error("Error executing SQL query:", error);
+        res.status(500).json({ error: "Internal Server Error" });
+        return;
+      }
+
+      res.json(results);
     }
-
-    res.json(results);
-  });
+  );
 });
-
 
 // Warning priority for incident page
 app.get("/incident-alerts", verifyToken, (req, res) => {
@@ -1090,25 +1092,42 @@ app.get("/total-location", verifyToken, (req, res) => {
   );
 });
 
-app.get("/total-panel", verifyToken, (req, res) => {
-  const allowedRoles = ["Admin", "super admin", "User"];
+// app.get("/total-panel", verifyToken, (req, res) => {
+//   const allowedRoles = ["Admin", "super admin", "User"];
 
-  if (!allowedRoles.includes(req.user_data.role)) {
-    return res
-      .status(403)
-      .json({ error: "Permission denied. Insufficient role." });
-  }
+//   if (!allowedRoles.includes(req.user_data.role)) {
+//     return res
+//       .status(403)
+//       .json({ error: "Permission denied. Insufficient role." });
+//   }
 
+//   connection.query(
+//     "SELECT COUNT(PanelMake) as panelCount FROM  SiteDetail  WHERE Status = 1;",
+//     (error, results) => {
+//       if (error) {
+//         console.error("Error retrieving total number of Panel Count:", error);
+//         res.status(500).json({ error: "Internal server error" });
+//         return;
+//       }
+//       const panelCount = results[0].panelCount;
+//       res.json({ panelCount });
+//     }
+//   );
+// });
+
+app.get("/map-marker", (req, res) => {
   connection.query(
-    "SELECT COUNT(PanelMake) as panelCount FROM  SiteDetail  WHERE Status = 1;",
+    `SELECT s.SiteId, s.AtmID, s.BranchName, c.CityName, st.StateName, s.Latitude, s.Longitude, l.ist_evt_dt
+      FROM SiteDetail as s join City as c on (s.City = c.CityId)
+      join State as st on (s.State = st.StateId)
+      join LatestData as l on (s.SiteId = l.SiteId);`,
     (error, results) => {
       if (error) {
         console.error("Error retrieving total number of Panel Count:", error);
         res.status(500).json({ error: "Internal server error" });
         return;
       }
-      const panelCount = results[0].panelCount;
-      res.json({ panelCount });
+      res.json({ results });
     }
   );
 });
@@ -1453,12 +1472,11 @@ app.get("/total-panel", verifyToken, (req, res) => {
 
   connection.query(
     `
-    SELECT
+    SELECT count(PanelMake) as panelCount,
     SUM(CASE WHEN Status = 1 THEN 1 ELSE 0 END) AS active,
     SUM(CASE WHEN Status = 0 THEN 1 ELSE 0 END) AS not_active
-    FROM
-    SiteDetail;
-`,
+    FROM SiteDetail;
+  `,
     (error, results) => {
       if (error) {
         console.error("Error retrieving total number of Panel Count:", error);
