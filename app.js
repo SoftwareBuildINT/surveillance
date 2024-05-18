@@ -33,6 +33,9 @@ const connection = mysql.createPool({
   user: "admin_buildINT",
   password: "buildINT@2023$",
   database: "serveillance",
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0,
 });
 app.use(express.json());
 // Connect to the MySQL database
@@ -1536,49 +1539,140 @@ app.get("/get-subClient", verifyToken, (req, res) => {
 });
 
 //incident page modal
-app.post("/update-incidentmodal/:incidentNo", verifyToken, async (req, res) => {
-  try {
-    // Extract parameters from request
-    const { incidentNo } = req.params;
-    const { Remark } = req.body;
+// app.post("/update-incidentmodal/:incidentNo", verifyToken, async (req, res) => {
+//   try {
+//     // Extract parameters from request
+//     const { incidentNo } = req.params;
+//     const { Remark } = req.body;
 
-    // Fetch user_id from profile API
-    const userId = req.user_data.Id;
-    console.log(incidentNo, Remark, userId);
+//     // Fetch user_id from profile API
+//     const userId = req.user_data.Id;
+//     console.log(incidentNo, Remark, userId);
 
-    // Update Remark and user_id in IncidentDetail table
-    const updateQuery = `
-      UPDATE IncidentDetail
-      SET Remark = ?,
-          user_id = ?, 
-          alert_status = 2
-      WHERE IncidentNo = ?;
-    `;
+//     // Update Remark and user_id in IncidentDetail table
+//     const updateQuery = `
+//       UPDATE IncidentDetail
+//       SET Remark = ?,
+//           user_id = ?,
+//           alert_status = 2
+//       WHERE IncidentNo = ?;
+//     `;
 
-    connection.query(
-      updateQuery,
-      [Remark, userId, incidentNo],
-      (err, result) => {
-        if (err) {
-          console.error("Error updating IncidentDetail:", err);
-          res.status(500).json({ error: "Error updating IncidentDetail" });
-        } else {
-          if (result.affectedRows > 0) {
-            res.json({
-              success: true,
-              message: "IncidentDetail updated successfully.",
-            });
-          } else {
-            res.status(404).json({ error: "IncidentDetail not found" });
-          }
-        }
+//     connection.query(
+//       updateQuery,
+//       [Remark, userId, incidentNo],
+//       (err, result) => {
+//         if (err) {
+//           console.error("Error updating IncidentDetail:", err);
+//           res.status(500).json({ error: "Error updating IncidentDetail" });
+//         } else {
+//           if (result.affectedRows > 0) {
+//             res.json({
+//               success: true,
+//               message: "IncidentDetail updated successfully.",
+//             });
+//           } else {
+//             res.status(404).json({ error: "IncidentDetail not found" });
+//           }
+//         }
+//       }
+//     );
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ error: "Internal Server Error" });
+//   }
+// });
+
+app.post("/update-incidentmodal/:incidentNo", verifyToken, (req, res) => {
+  const { incidentNo } = req.params;
+  const { Remark } = req.body;
+  const userId = req.user_data.Id;
+
+  connection.getConnection((err, conn) => {
+    if (err) {
+      console.error("Error getting database connection:", err.message);
+      return res.status(500).json({ error: "Internal Server Error" });
+    }
+
+    conn.beginTransaction((err) => {
+      if (err) {
+        console.error("Error beginning transaction:", err.message);
+        conn.release();
+        return res.status(500).json({ error: "Internal Server Error" });
       }
-    );
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
+
+      const updateQuery = `
+        UPDATE IncidentDetail
+        SET Remark = ?, user_id = ?, alert_status = 2
+        WHERE IncidentNo = ?;
+      `;
+
+      conn.query(updateQuery, [Remark, userId, incidentNo], (err, result) => {
+        if (err) {
+          return conn.rollback(() => {
+            console.error("Error updating IncidentDetail:", err.message);
+            res.status(500).json({ error: "Error updating IncidentDetail" });
+            conn.release();
+          });
+        }
+
+        if (result.affectedRows > 0) {
+          const archiveQuery = `
+            INSERT INTO IncidentDetailc (IncidentNo, SiteId, AtmId, IncidentName, AlertType, SiteName, Client, SubClient, PanelTimeStamp, IstTimeStamp, Remark, user_id, alert_status, close_time)
+            SELECT IncidentNo, SiteId, AtmId, IncidentName, AlertType, SiteName, Client, SubClient, PanelTimeStamp, IstTimeStamp, Remark, user_id, alert_status, NOW()
+            FROM IncidentDetail
+            WHERE IncidentNo = ?;
+          `;
+
+          conn.query(archiveQuery, [incidentNo], (err, result) => {
+            if (err) {
+              return conn.rollback(() => {
+                console.error("Error archiving IncidentDetail:", err.message);
+                res.status(500).json({ error: "Error archiving IncidentDetail" });
+                conn.release();
+              });
+            }
+
+            const deleteQuery = `
+              DELETE FROM IncidentDetail
+              WHERE IncidentNo = ?;
+            `;
+
+            conn.query(deleteQuery, [incidentNo], (err, result) => {
+              if (err) {
+                return conn.rollback(() => {
+                  console.error("Error deleting from IncidentDetail:", err.message);
+                  res.status(500).json({ error: "Error deleting from IncidentDetail" });
+                  conn.release();
+                });
+              }
+
+              conn.commit((err) => {
+                if (err) {
+                  return conn.rollback(() => {
+                    console.error("Transaction commit failed:", err.message);
+                    res.status(500).json({ error: "Transaction commit failed" });
+                    conn.release();
+                  });
+                }
+                console.log("IncidentDetail updated and moved to archive successfully.")
+                res.json({
+                  success: true,
+                  message: "IncidentDetail updated and moved to archive successfully.",
+                });
+                conn.release();
+              });
+            });
+          });
+        } else {
+          res.status(404).json({ error: "IncidentDetail not found" });
+          conn.release();
+        }
+      });
+    });
+  });
 });
+
 
 // Get Panel Make information
 app.get("/get-panelMake", verifyToken, (req, res) => {
