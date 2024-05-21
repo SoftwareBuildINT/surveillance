@@ -941,6 +941,7 @@ app.get("/get-incidents", verifyToken, (req, res) => {
     res.json(results);
   });
 });
+
 app.get("/incidentslive", (req, res) => {
   const incidentNo = req.query.incidentNo;
   const incident_name = req.query.incident_name;
@@ -991,6 +992,24 @@ app.get("/incidentslive", (req, res) => {
       res.json(results);
     }
   );
+});
+
+app.get("/incidentLiveCompleted", (req, res) => {
+  const atmId = req.query.atmId;
+  const incidentName = req.query.incidentName;
+  console.log(atmId);
+  console.log(incidentName);
+
+  const query = `SELECT IncidentNo AS Incidentno, SiteId, AtmId, IncidentName AS alert, AlertType, SiteName, Client, SubClient, PanelTimeStamp, IstTimeStamp, Remark, alert_status AS action_status, close_time FROM serveillance.IncidentDetailc WHERE AtmId = ? AND IncidentName = ? order by 1 desc;`;
+
+  connection.query(query, [atmId, incidentName], (error, result) => {
+    if (error) {
+      console.error("Error executing SQL query: ", error);
+      res.status(500).json({ error: "Internal Server Error" });
+      return;
+    }
+    res.json(result);
+  });
 });
 
 // Warning priority for incident page
@@ -1628,7 +1647,9 @@ app.post("/update-incidentmodal/:incidentNo", verifyToken, (req, res) => {
             if (err) {
               return conn.rollback(() => {
                 console.error("Error archiving IncidentDetail:", err.message);
-                res.status(500).json({ error: "Error archiving IncidentDetail" });
+                res
+                  .status(500)
+                  .json({ error: "Error archiving IncidentDetail" });
                 conn.release();
               });
             }
@@ -1641,8 +1662,13 @@ app.post("/update-incidentmodal/:incidentNo", verifyToken, (req, res) => {
             conn.query(deleteQuery, [incidentNo], (err, result) => {
               if (err) {
                 return conn.rollback(() => {
-                  console.error("Error deleting from IncidentDetail:", err.message);
-                  res.status(500).json({ error: "Error deleting from IncidentDetail" });
+                  console.error(
+                    "Error deleting from IncidentDetail:",
+                    err.message
+                  );
+                  res
+                    .status(500)
+                    .json({ error: "Error deleting from IncidentDetail" });
                   conn.release();
                 });
               }
@@ -1651,14 +1677,19 @@ app.post("/update-incidentmodal/:incidentNo", verifyToken, (req, res) => {
                 if (err) {
                   return conn.rollback(() => {
                     console.error("Transaction commit failed:", err.message);
-                    res.status(500).json({ error: "Transaction commit failed" });
+                    res
+                      .status(500)
+                      .json({ error: "Transaction commit failed" });
                     conn.release();
                   });
                 }
-                console.log("IncidentDetail updated and moved to archive successfully.")
+                console.log(
+                  "IncidentDetail updated and moved to archive successfully."
+                );
                 res.json({
                   success: true,
-                  message: "IncidentDetail updated and moved to archive successfully.",
+                  message:
+                    "IncidentDetail updated and moved to archive successfully.",
                 });
                 conn.release();
               });
@@ -1672,7 +1703,6 @@ app.post("/update-incidentmodal/:incidentNo", verifyToken, (req, res) => {
     });
   });
 });
-
 
 // Get Panel Make information
 app.get("/get-panelMake", verifyToken, (req, res) => {
