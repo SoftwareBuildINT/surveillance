@@ -14,7 +14,7 @@ const cors = require("cors");
 const bcrypt = require("bcrypt");
 
 // const mysql = require('mysql2/promise');
-const storage = multer.memoryStorage(); // Store the image in memory
+const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
 app.use(express.static("public"));
@@ -85,18 +85,18 @@ app.get("/profile", verifyToken, (req, res) => {
   // Continue with your existing logic to fetch profile from the database
   const userId = req.user_data.Id;
 
-  console.log("User ID:", userId); // Log the user ID to check if it's correct
+  console.log("User ID:", userId);
 
   const query = `SELECT Id, CONCAT(FirstName, ' ', LastName) AS fullname, role FROM login WHERE Id = ?;`;
 
-  console.log("Query:", query); // Log the query string to check if it's correct
+  console.log("Query:", query);
 
   connection.query(query, [userId], (err, result) => {
     if (err) {
       console.error("Error fetching profile:", err);
       res.status(500).json({ error: "Error fetching profile" });
     } else {
-      console.log("Result:", result); // Log the result to check what's being returned
+      console.log("Result:", result);
       if (result.length > 0) {
         const profile = result[0];
         res.json(profile);
@@ -128,10 +128,14 @@ app.get("/checkStatus", verifyToken, (req, res) => {
       if (results.length > 0) {
         const currentTime = new Date();
         const fifteenMinutesInMillis = 15 * 60 * 1000;
+        console.log("current time", currentTime);
 
         const atmStatusList = results.map((result) => {
+          console.log("Atm id",result.AtmID)
           const timeDifference = currentTime - result.ist_evt_dt;
+          console.log("time difference", timeDifference);
           const isOnline = timeDifference <= fifteenMinutesInMillis;
+          console.log("isOnline", isOnline);
 
           return {
             AtmID: result.AtmID,
@@ -251,9 +255,7 @@ app.post("/update-status/:siteId/:status", verifyToken, (req, res) => {
   }
 
   const siteId = req.params.siteId;
-  const status = req.params.status; // Retrieve siteId from URL parameters
-  console.log(siteId);
-  console.log(status);
+  const status = req.params.status;
 
   let sql;
 
