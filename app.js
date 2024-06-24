@@ -127,15 +127,17 @@ app.get("/checkStatus", verifyToken, (req, res) => {
 
       if (results.length > 0) {
         const currentTime = new Date();
+        const istOffset = 5.5 * 60 * 60 * 1000; // IST is UTC+5:30
+        const istTime = new Date(currentTime.getTime() + istOffset);
         const fifteenMinutesInMillis = 15 * 60 * 1000;
-        console.log("current time", currentTime);
+        // console.log("current time", currentTime);
 
         const atmStatusList = results.map((result) => {
-          console.log("Atm id",result.AtmID)
-          const timeDifference = currentTime - result.ist_evt_dt;
-          console.log("time difference", timeDifference);
+          // console.log("Atm id", result.AtmID);
+          const timeDifference = istTime - result.ist_evt_dt;
+          // console.log("time difference", timeDifference);
           const isOnline = timeDifference <= fifteenMinutesInMillis;
-          console.log("isOnline", isOnline);
+          // console.log("isOnline", isOnline);
 
           return {
             AtmID: result.AtmID,
