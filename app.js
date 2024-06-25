@@ -133,7 +133,7 @@ app.get("/checkStatus", verifyToken, (req, res) => {
 
         const atmStatusList = results.map((result) => {
           if (result.ist_evt_dt) {
-            const timeDifference = currentTime - result.ist_evt_dt;
+            const timeDifference = istTime - result.ist_evt_dt;
             const isOnline = timeDifference <= fifteenMinutesInMillis;
             return {
               AtmID: result.AtmID,
