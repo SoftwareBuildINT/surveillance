@@ -141,7 +141,7 @@ app.get("/checkStatus", verifyToken, (req, res) => {
               status: isOnline ? "online" : "offline",
               evt_dt: result.ist_evt_dt, // Include event date
             };
-          }else if(result.ist_evt_dt == null){
+          } else if (result.ist_evt_dt == null) {
             return {
               AtmID: result.AtmID,
               BranchName: result.BranchName,
@@ -159,7 +159,7 @@ app.get("/checkStatus", verifyToken, (req, res) => {
         );
         const noDataATMs = atmStatusList.filter(
           (atm) => atm.status === "No Data"
-        )
+        );
 
         const totalATMs = atmStatusList.length;
         const panelonlineCount = onlineATMs.length;
@@ -1803,6 +1803,288 @@ app.get("/api/latestpanel/data", verifyToken, (req, res) => {
   });
 });
 
+// function test(data) {
+//   try {
+//     var PanelMacId = data.split(",")[5];
+//     var hh = data.split(",")[7].substring(0, 2);
+//     var mm = data.split(",")[7].substring(2, 4);
+//     var ss = data.split(",")[7].substring(4, 6);
+//     var dd = data.split(",")[8].substring(0, 2);
+//     var MM = data.split(",")[8].substring(2, 4);
+//     var yy = data.split(",")[8].substring(4, 6);
+//     var panelTimeUTC = new Date(
+//       "20" + yy + "-" + MM + "-" + dd + " " + hh + ":" + mm + ":" + ss
+//     );
+//     var formattedDate = moment(panelTimeUTC).format("YYYY-MM-DD HH:mm:ss");
+//     var macid = data.split(",")[9];
+//     var z = [];
+//     for (var j = 0; j < 32; j++) {
+//       z[j] = data.split(",")[10].split("!")[j];
+//     }
+//     let istDate = new Date().toLocaleString("en-US", {
+//       timeZone: "Asia/Kolkata",
+//     });
+
+//     connection.query(
+//       `SELECT SiteId, AtmID FROM SiteDetail WHERE PanelMacId = '${macid}'`,
+//       (err, result) => {
+//         if (err) {
+//           console.log(err);
+//         } else {
+//           console.log(result);
+//           if (result[0]) {
+//             // Checking if the data is present in LatestData table
+//             let SiteId = result[0]["SiteId"];
+//             let AtmID = result[0]["AtmID"];
+//             console.log("site", SiteId);
+//             console.log("atmId", AtmID);
+//             connection.query(
+//               `SELECT SiteId FROM LatestData WHERE SiteId = ${SiteId};`,
+//               (err, result) => {
+//                 if (err) {
+//                   console.log(err);
+//                 } else {
+//                   console.log(result);
+//                   // Updating the existing data
+//                   if (result[0]) {
+//                     connection.query(
+//                       `update LatestData set macid = '${macid}',
+//                       AtmID = '${AtmID}',
+//                       zone1_status = '${z[0]}', zone2_status = '${
+//                         z[1]
+//                       }', zone3_status = '${z[2]}', zone4_status = '${
+//                         z[3]
+//                       }', zone5_status = '${z[4]}', zone6_status = '${
+//                         z[5]
+//                       }', zone7_status = '${z[6]}', zone8_status = '${
+//                         z[7]
+//                       }', zone9_status = '${z[8]}', zone10_status = '${
+//                         z[9]
+//                       }', zone11_status = '${z[10]}', zone12_status = '${
+//                         z[11]
+//                       }', zone13_status = '${z[12]}', zone14_status = '${
+//                         z[13]
+//                       }', zone15_status = '${z[14]}', zone16_status = '${
+//                         z[15]
+//                       }', zone17_status = '${z[16]}', zone18_status = '${
+//                         z[17]
+//                       }', zone19_status = '${z[18]}', zone20_status = '${
+//                         z[19]
+//                       }', zone21_status = '${z[20]}', zone22_status = '${
+//                         z[21]
+//                       }', zone23_status = '${z[22]}', zone24_status = '${
+//                         z[23]
+//                       }', zone25_status = '${z[24]}', zone26_status = '${
+//                         z[25]
+//                       }', zone27_status = '${z[26]}', zone28_status = '${
+//                         z[27]
+//                       }', zone29_status = '${z[28]}', zone30_status = '${
+//                         z[29]
+//                       }', zone31_status = '${z[30]}', zone32_status = '${
+//                         z[31]
+//                       }', panel_evt_dt = '${formattedDate}', ist_evt_dt = '${moment(
+//                         istDate
+//                       ).format(
+//                         "YYYY-MM-DD HH:mm:ss"
+//                       )}' where SiteId = '${SiteId}'`,
+//                       (err, result) => {
+//                         if (err) {
+//                           console.log(err);
+//                         } else {
+//                           console.log(result);
+//                         }
+//                       }
+//                     );
+//                     connection.query(
+//                       `SELECT trans.zone1_Astatus, trans.zone2_Astatus, trans.zone3_Astatus, trans.zone4_Astatus, trans.zone5_Astatus,
+//                       trans.zone6_Astatus, trans.zone7_Astatus, trans.zone8_Astatus, trans.zone9_Astatus, trans.zone10_Astatus,
+//                       trans.zone11_Astatus, trans.zone12_Astatus, trans.zone13_Astatus, trans.zone14_Astatus, trans.zone15_Astatus,
+//                         trans.zone16_Astatus, trans.zone17_Astatus, trans.zone18_Astatus, trans.zone19_Astatus, trans.zone20_Astatus,
+//                         trans.zone21_Astatus, trans.zone22_Astatus, trans.zone23_Astatus, trans.zone24_Astatus, trans.zone25_Astatus,
+//                         trans.zone26_Astatus, trans.zone27_Astatus, trans.zone28_Astatus, trans.zone29_Astatus, trans.zone30_Astatus,trans.zone31_Astatus,
+//                         trans.zone32_Astatus FROM SiteDetail AS mst JOIN LatestData AS trans ON mst.SiteId = trans.SiteId WHERE mst.SiteId = '${SiteId}'`,
+//                       (err, zoneresult) => {
+//                         if (err) {
+//                           console.log(err);
+//                         } else {
+//                           if (zoneresult[0]) {
+//                             for (var i = 0; i < 32; i++) {
+//                               var zoneNum = i + 1;
+//                               var zoneE = zoneresult[0][`zone${zoneNum}_e`];
+//                               var zoneAStatusTimeValue =
+//                                 zoneresult[0][`zone${zoneNum}_Astatus`];
+//                               if (zoneAStatusTimeValue) {
+//                                 var zoneAStatusTime =
+//                                   zoneresult[0][`zone${zoneNum}_Astatus`].split(
+//                                     ","
+//                                   );
+//                                 var zoneAStatus = zoneAStatusTime[0];
+//                               } else {
+//                                 var zoneAStatus = null;
+//                               }
+//                               if (zoneE == 1) {
+//                                 if (
+//                                   (zoneAStatus == null || zoneAStatus == 3) &&
+//                                   z[i] ==
+//                                     (zoneNum > 9
+//                                       ? `${zoneNum}RA`
+//                                       : `0${zoneNum}RA`)
+//                                 ) {
+//                                   connection.query(
+//                                     `update LatestData set zone${zoneNum}_Astatus = "1,${formattedDate},${moment(
+//                                       istDate
+//                                     ).format(
+//                                       "YYYY-MM-DD HH:mm:ss"
+//                                     )}" where SiteId = '${SiteId}'`,
+//                                     (err, updateResult) => {
+//                                       if (err) {
+//                                         console.log(err);
+//                                       }
+//                                     }
+//                                   );
+//                                 } else if (
+//                                   (zoneAStatus == 1 || zoneAStatus == null) &&
+//                                   z[i] ==
+//                                     (zoneNum > 9
+//                                       ? `${zoneNum}AA`
+//                                       : `0${zoneNum}AA`)
+//                                 ) {
+//                                   connection.query(
+//                                     `update LatestData set zone${zoneNum}_Astatus = "2,${formattedDate},${moment(
+//                                       istDate
+//                                     ).format(
+//                                       "YYYY-MM-DD HH:mm:ss"
+//                                     )}" where SiteId = '${SiteId}'`,
+//                                     (err, updateResult) => {
+//                                       if (err) {
+//                                         console.log(err);
+//                                       }
+//                                     }
+//                                   );
+//                                 }
+//                               }
+//                             }
+//                           }
+//                         }
+//                       }
+//                     );
+//                   }
+//                   // Adding data in the database
+//                   else {
+//                     connection.query(
+//                       `INSERT INTO LatestData (macid, SiteId, AtmID, zone1_status, zone2_status, zone3_status, zone4_status, zone5_status, zone6_status, zone7_status, zone8_status, zone9_status, zone10_status, zone11_status, zone12_status, zone13_status, zone14_status, zone15_status, zone16_status, zone17_status, zone18_status, zone19_status, zone20_status, zone21_status, zone22_status, zone23_status, zone24_status, zone25_status, zone26_status, zone27_status, zone28_status, zone29_status, zone30_status, zone31_status, zone32_status, panel_evt_dt, ist_evt_dt)
+//                       VALUES ('${macid}', '${SiteId}', '${AtmID}', '${
+//                         z[0]
+//                       }', '${z[1]}', '${z[2]}', '${z[3]}', '${z[4]}','${
+//                         z[5]
+//                       }','${z[6]}','${z[7]}','${z[8]}','${z[9]}','${z[10]}','${
+//                         z[11]
+//                       }','${z[12]}','${z[13]}','${z[14]}','${z[15]}','${
+//                         z[16]
+//                       }','${z[17]}', '${z[18]}','${z[19]}','${z[20]}','${
+//                         z[21]
+//                       }','${z[22]}','${z[23]}','${z[24]}','${z[25]}','${
+//                         z[26]
+//                       }','${z[27]}','${z[28]}','${z[29]}','${z[30]}','${
+//                         z[31]
+//                       }', '${formattedDate}', '${moment(istDate).format(
+//                         "YYYY-MM-DD HH:mm:ss"
+//                       )}')`,
+//                       (err, result) => {
+//                         if (err) {
+//                           console.log(err);
+//                         } else {
+//                           console.log(result);
+//                         }
+//                       }
+//                     );
+
+//                     connection.query(
+//                       `SELECT trans.zone1_Astatus, trans.zone2_Astatus, trans.zone3_Astatus, trans.zone4_Astatus, trans.zone5_Astatus,
+//                       trans.zone6_Astatus, trans.zone7_Astatus, trans.zone8_Astatus, trans.zone9_Astatus, trans.zone10_Astatus,
+//                       trans.zone11_Astatus, trans.zone12_Astatus, trans.zone13_Astatus, trans.zone14_Astatus, trans.zone15_Astatus,
+//                       trans.zone16_Astatus, trans.zone17_Astatus, trans.zone18_Astatus, trans.zone19_Astatus, trans.zone20_Astatus,
+//                       trans.zone21_Astatus, trans.zone22_Astatus, trans.zone23_Astatus, trans.zone24_Astatus, trans.zone25_Astatus,
+//                       trans.zone26_Astatus, trans.zone27_Astatus, trans.zone28_Astatus, trans.zone29_Astatus, trans.zone30_Astatus,trans.zone31_Astatus,
+//                       trans.zone32_Astatus FROM SiteDetail AS mst JOIN LatestData AS trans ON mst.SiteId = trans.SiteId WHERE mst.SiteId = '${SiteId}'`,
+//                       (err, zoneresult) => {
+//                         if (err) {
+//                           console.log(err);
+//                         } else {
+//                           if (zoneresult[0]) {
+//                             for (var i = 0; i < 32; i++) {
+//                               var zoneNum = i + 1;
+//                               var zoneE = zoneresult[0][`zone${zoneNum}_e`];
+//                               var zoneAStatusTimeValue =
+//                                 zoneresult[0][`zone${zoneNum}_Astatus`];
+//                               if (zoneAStatusTimeValue) {
+//                                 var zoneAStatusTime =
+//                                   zoneresult[0][`zone${zoneNum}_Astatus`].split(
+//                                     ","
+//                                   );
+//                                 var zoneAStatus = zoneAStatusTime[0];
+//                               } else {
+//                                 var zoneAStatus = null;
+//                               }
+//                               if (zoneE == 1) {
+//                                 if (
+//                                   (zoneAStatus == null || zoneAStatus == 3) &&
+//                                   z[i] ==
+//                                     (zoneNum > 9
+//                                       ? `${zoneNum}RA`
+//                                       : `0${zoneNum}RA`)
+//                                 ) {
+//                                   connection.query(
+//                                     `update LatestData set zone${zoneNum}_Astatus = "1,${formattedDate},${moment(
+//                                       istDate
+//                                     ).format(
+//                                       "YYYY-MM-DD HH:mm:ss"
+//                                     )}" where SiteId = '${SiteId}'`,
+//                                     (err, updateResult) => {
+//                                       if (err) {
+//                                         console.log(err);
+//                                       }
+//                                     }
+//                                   );
+//                                 } else if (
+//                                   (zoneAStatus == 1 || zoneAStatus == null) &&
+//                                   z[i] ==
+//                                     (zoneNum > 9
+//                                       ? `${zoneNum}AA`
+//                                       : `0${zoneNum}AA`)
+//                                 ) {
+//                                   connection.query(
+//                                     `update LatestData set zone${zoneNum}_Astatus = "2,${formattedDate},${moment(
+//                                       istDate
+//                                     ).format(
+//                                       "YYYY-MM-DD HH:mm:ss"
+//                                     )}" where SiteId = '${SiteId}'`,
+//                                     (err, updateResult) => {
+//                                       if (err) {
+//                                         console.log(err);
+//                                       }
+//                                     }
+//                                   );
+//                                 }
+//                               }
+//                             }
+//                           }
+//                         }
+//                       }
+//                     );
+//                   }
+//                 }
+//               }
+//             );
+//           }
+//         }
+//       }
+//     );
+//   } catch (err) {
+//     console.log(err);
+//   }
+// }
+
 function test(data) {
   try {
     var PanelMacId = data.split(",")[5];
@@ -1831,62 +2113,60 @@ function test(data) {
         if (err) {
           console.log(err);
         } else {
-          console.log(result);
           if (result[0]) {
-            // Checking if the data is present in LatestData table
             let SiteId = result[0]["SiteId"];
             let AtmID = result[0]["AtmID"];
-            console.log("site", SiteId);
-            console.log("atmId", AtmID);
             connection.query(
               `SELECT SiteId FROM LatestData WHERE SiteId = ${SiteId};`,
               (err, result) => {
                 if (err) {
                   console.log(err);
                 } else {
-                  console.log(result);
                   // Updating the existing data
                   if (result[0]) {
                     connection.query(
-                      `update LatestData set macid = '${macid}', 
-                      AtmID = '${AtmID}',
-                      zone1_status = '${z[0]}', zone2_status = '${
+                      `UPDATE LatestData SET macid = '${macid}', 
+                  AtmID = '${AtmID}',
+                  zone1_status = '${z[0]}', zone2_status = '${
                         z[1]
-                      }', zone3_status = '${z[2]}', zone4_status = '${
-                        z[3]
-                      }', zone5_status = '${z[4]}', zone6_status = '${
+                      }', zone3_status = '${z[2]}', zone4_status = '${z[3]}', 
+                  zone5_status = '${z[4]}', zone6_status = '${
                         z[5]
-                      }', zone7_status = '${z[6]}', zone8_status = '${
-                        z[7]
-                      }', zone9_status = '${z[8]}', zone10_status = '${
+                      }', zone7_status = '${z[6]}', zone8_status = '${z[7]}', 
+                  zone9_status = '${z[8]}', zone10_status = '${
                         z[9]
                       }', zone11_status = '${z[10]}', zone12_status = '${
                         z[11]
-                      }', zone13_status = '${z[12]}', zone14_status = '${
+                      }', 
+                  zone13_status = '${z[12]}', zone14_status = '${
                         z[13]
                       }', zone15_status = '${z[14]}', zone16_status = '${
                         z[15]
-                      }', zone17_status = '${z[16]}', zone18_status = '${
+                      }', 
+                  zone17_status = '${z[16]}', zone18_status = '${
                         z[17]
                       }', zone19_status = '${z[18]}', zone20_status = '${
                         z[19]
-                      }', zone21_status = '${z[20]}', zone22_status = '${
+                      }', 
+                  zone21_status = '${z[20]}', zone22_status = '${
                         z[21]
                       }', zone23_status = '${z[22]}', zone24_status = '${
                         z[23]
-                      }', zone25_status = '${z[24]}', zone26_status = '${
+                      }', 
+                  zone25_status = '${z[24]}', zone26_status = '${
                         z[25]
                       }', zone27_status = '${z[26]}', zone28_status = '${
                         z[27]
-                      }', zone29_status = '${z[28]}', zone30_status = '${
+                      }', 
+                  zone29_status = '${z[28]}', zone30_status = '${
                         z[29]
                       }', zone31_status = '${z[30]}', zone32_status = '${
                         z[31]
-                      }', panel_evt_dt = '${formattedDate}', ist_evt_dt = '${moment(
+                      }', 
+                  panel_evt_dt = '${formattedDate}', ist_evt_dt = '${moment(
                         istDate
-                      ).format(
-                        "YYYY-MM-DD HH:mm:ss"
-                      )}' where SiteId = '${SiteId}'`,
+                      ).format("YYYY-MM-DD HH:mm:ss")}' 
+                  WHERE SiteId = '${SiteId}'`,
                       (err, result) => {
                         if (err) {
                           console.log(err);
@@ -1895,99 +2175,43 @@ function test(data) {
                         }
                       }
                     );
+                    // Updating the IST event time in SiteDetail table
                     connection.query(
-                      `SELECT trans.zone1_Astatus, trans.zone2_Astatus, trans.zone3_Astatus, trans.zone4_Astatus, trans.zone5_Astatus,
-                      trans.zone6_Astatus, trans.zone7_Astatus, trans.zone8_Astatus, trans.zone9_Astatus, trans.zone10_Astatus,
-                      trans.zone11_Astatus, trans.zone12_Astatus, trans.zone13_Astatus, trans.zone14_Astatus, trans.zone15_Astatus,
-                        trans.zone16_Astatus, trans.zone17_Astatus, trans.zone18_Astatus, trans.zone19_Astatus, trans.zone20_Astatus, 
-                        trans.zone21_Astatus, trans.zone22_Astatus, trans.zone23_Astatus, trans.zone24_Astatus, trans.zone25_Astatus, 
-                        trans.zone26_Astatus, trans.zone27_Astatus, trans.zone28_Astatus, trans.zone29_Astatus, trans.zone30_Astatus,trans.zone31_Astatus,
-                        trans.zone32_Astatus FROM SiteDetail AS mst JOIN LatestData AS trans ON mst.SiteId = trans.SiteId WHERE mst.SiteId = '${SiteId}'`,
-                      (err, zoneresult) => {
+                      `UPDATE SiteDetail SET IstTimeStamp = '${moment(
+                        istDate
+                      ).format(
+                        "YYYY-MM-DD HH:mm:ss"
+                      )}' WHERE SiteId = '${SiteId}'`,
+                      (err, result) => {
                         if (err) {
                           console.log(err);
                         } else {
-                          if (zoneresult[0]) {
-                            for (var i = 0; i < 32; i++) {
-                              var zoneNum = i + 1;
-                              var zoneE = zoneresult[0][`zone${zoneNum}_e`];
-                              var zoneAStatusTimeValue =
-                                zoneresult[0][`zone${zoneNum}_Astatus`];
-                              if (zoneAStatusTimeValue) {
-                                var zoneAStatusTime =
-                                  zoneresult[0][`zone${zoneNum}_Astatus`].split(
-                                    ","
-                                  );
-                                var zoneAStatus = zoneAStatusTime[0];
-                              } else {
-                                var zoneAStatus = null;
-                              }
-                              if (zoneE == 1) {
-                                if (
-                                  (zoneAStatus == null || zoneAStatus == 3) &&
-                                  z[i] ==
-                                    (zoneNum > 9
-                                      ? `${zoneNum}RA`
-                                      : `0${zoneNum}RA`)
-                                ) {
-                                  connection.query(
-                                    `update LatestData set zone${zoneNum}_Astatus = "1,${formattedDate},${moment(
-                                      istDate
-                                    ).format(
-                                      "YYYY-MM-DD HH:mm:ss"
-                                    )}" where SiteId = '${SiteId}'`,
-                                    (err, updateResult) => {
-                                      if (err) {
-                                        console.log(err);
-                                      }
-                                    }
-                                  );
-                                } else if (
-                                  (zoneAStatus == 1 || zoneAStatus == null) &&
-                                  z[i] ==
-                                    (zoneNum > 9
-                                      ? `${zoneNum}AA`
-                                      : `0${zoneNum}AA`)
-                                ) {
-                                  connection.query(
-                                    `update LatestData set zone${zoneNum}_Astatus = "2,${formattedDate},${moment(
-                                      istDate
-                                    ).format(
-                                      "YYYY-MM-DD HH:mm:ss"
-                                    )}" where SiteId = '${SiteId}'`,
-                                    (err, updateResult) => {
-                                      if (err) {
-                                        console.log(err);
-                                      }
-                                    }
-                                  );
-                                }
-                              }
-                            }
-                          }
+                          console.log(result);
                         }
                       }
                     );
-                  }
-                  // Adding data in the database
-                  else {
+                  } else {
+                    // Adding data in the database
                     connection.query(
-                      `INSERT INTO LatestData (macid, SiteId, AtmID, zone1_status, zone2_status, zone3_status, zone4_status, zone5_status, zone6_status, zone7_status, zone8_status, zone9_status, zone10_status, zone11_status, zone12_status, zone13_status, zone14_status, zone15_status, zone16_status, zone17_status, zone18_status, zone19_status, zone20_status, zone21_status, zone22_status, zone23_status, zone24_status, zone25_status, zone26_status, zone27_status, zone28_status, zone29_status, zone30_status, zone31_status, zone32_status, panel_evt_dt, ist_evt_dt) 
-                      VALUES ('${macid}', '${SiteId}', '${AtmID}', '${
-                        z[0]
-                      }', '${z[1]}', '${z[2]}', '${z[3]}', '${z[4]}','${
-                        z[5]
-                      }','${z[6]}','${z[7]}','${z[8]}','${z[9]}','${z[10]}','${
-                        z[11]
-                      }','${z[12]}','${z[13]}','${z[14]}','${z[15]}','${
-                        z[16]
-                      }','${z[17]}', '${z[18]}','${z[19]}','${z[20]}','${
-                        z[21]
-                      }','${z[22]}','${z[23]}','${z[24]}','${z[25]}','${
-                        z[26]
-                      }','${z[27]}','${z[28]}','${z[29]}','${z[30]}','${
-                        z[31]
-                      }', '${formattedDate}', '${moment(istDate).format(
+                      `INSERT INTO LatestData (macid, SiteId, AtmID, zone1_status, zone2_status, zone3_status, zone4_status, 
+                  zone5_status, zone6_status, zone7_status, zone8_status, zone9_status, zone10_status, zone11_status, 
+                  zone12_status, zone13_status, zone14_status, zone15_status, zone16_status, zone17_status, zone18_status, 
+                  zone19_status, zone20_status, zone21_status, zone22_status, zone23_status, zone24_status, zone25_status, 
+                  zone26_status, zone27_status, zone28_status, zone29_status, zone30_status, zone31_status, zone32_status, 
+                  panel_evt_dt, ist_evt_dt) 
+                  VALUES ('${macid}', '${SiteId}', '${AtmID}', '${z[0]}', '${
+                        z[1]
+                      }', '${z[2]}', '${z[3]}', '${z[4]}', 
+                  '${z[5]}', '${z[6]}', '${z[7]}', '${z[8]}', '${z[9]}', '${
+                        z[10]
+                      }', '${z[11]}', '${z[12]}', '${z[13]}', 
+                  '${z[14]}', '${z[15]}', '${z[16]}', '${z[17]}', '${
+                        z[18]
+                      }', '${z[19]}', '${z[20]}', '${z[21]}', '${z[22]}', 
+                  '${z[23]}', '${z[24]}', '${z[25]}', '${z[26]}', '${
+                        z[27]
+                      }', '${z[28]}', '${z[29]}', '${z[30]}', '${z[31]}', 
+                  '${formattedDate}', '${moment(istDate).format(
                         "YYYY-MM-DD HH:mm:ss"
                       )}')`,
                       (err, result) => {
@@ -1998,80 +2222,86 @@ function test(data) {
                         }
                       }
                     );
-
+                    // Updating the IST event time in SiteDetail table
                     connection.query(
-                      `SELECT trans.zone1_Astatus, trans.zone2_Astatus, trans.zone3_Astatus, trans.zone4_Astatus, trans.zone5_Astatus,
-                      trans.zone6_Astatus, trans.zone7_Astatus, trans.zone8_Astatus, trans.zone9_Astatus, trans.zone10_Astatus,
-                      trans.zone11_Astatus, trans.zone12_Astatus, trans.zone13_Astatus, trans.zone14_Astatus, trans.zone15_Astatus,
-                      trans.zone16_Astatus, trans.zone17_Astatus, trans.zone18_Astatus, trans.zone19_Astatus, trans.zone20_Astatus, 
-                      trans.zone21_Astatus, trans.zone22_Astatus, trans.zone23_Astatus, trans.zone24_Astatus, trans.zone25_Astatus, 
-                      trans.zone26_Astatus, trans.zone27_Astatus, trans.zone28_Astatus, trans.zone29_Astatus, trans.zone30_Astatus,trans.zone31_Astatus,
-                      trans.zone32_Astatus FROM SiteDetail AS mst JOIN LatestData AS trans ON mst.SiteId = trans.SiteId WHERE mst.SiteId = '${SiteId}'`,
-                      (err, zoneresult) => {
+                      `UPDATE SiteDetail SET IstTimeStamp = '${moment(
+                        istDate
+                      ).format(
+                        "YYYY-MM-DD HH:mm:ss"
+                      )}' WHERE SiteId = '${SiteId}'`,
+                      (err, result) => {
                         if (err) {
                           console.log(err);
                         } else {
-                          if (zoneresult[0]) {
-                            for (var i = 0; i < 32; i++) {
-                              var zoneNum = i + 1;
-                              var zoneE = zoneresult[0][`zone${zoneNum}_e`];
-                              var zoneAStatusTimeValue =
-                                zoneresult[0][`zone${zoneNum}_Astatus`];
-                              if (zoneAStatusTimeValue) {
-                                var zoneAStatusTime =
-                                  zoneresult[0][`zone${zoneNum}_Astatus`].split(
-                                    ","
-                                  );
-                                var zoneAStatus = zoneAStatusTime[0];
-                              } else {
-                                var zoneAStatus = null;
-                              }
-                              if (zoneE == 1) {
-                                if (
-                                  (zoneAStatus == null || zoneAStatus == 3) &&
-                                  z[i] ==
-                                    (zoneNum > 9
-                                      ? `${zoneNum}RA`
-                                      : `0${zoneNum}RA`)
-                                ) {
-                                  connection.query(
-                                    `update LatestData set zone${zoneNum}_Astatus = "1,${formattedDate},${moment(
-                                      istDate
-                                    ).format(
-                                      "YYYY-MM-DD HH:mm:ss"
-                                    )}" where SiteId = '${SiteId}'`,
-                                    (err, updateResult) => {
-                                      if (err) {
-                                        console.log(err);
-                                      }
-                                    }
-                                  );
-                                } else if (
-                                  (zoneAStatus == 1 || zoneAStatus == null) &&
-                                  z[i] ==
-                                    (zoneNum > 9
-                                      ? `${zoneNum}AA`
-                                      : `0${zoneNum}AA`)
-                                ) {
-                                  connection.query(
-                                    `update LatestData set zone${zoneNum}_Astatus = "2,${formattedDate},${moment(
-                                      istDate
-                                    ).format(
-                                      "YYYY-MM-DD HH:mm:ss"
-                                    )}" where SiteId = '${SiteId}'`,
-                                    (err, updateResult) => {
-                                      if (err) {
-                                        console.log(err);
-                                      }
-                                    }
-                                  );
-                                }
-                              }
-                            }
-                          }
+                          console.log(result);
                         }
                       }
                     );
+                  }
+                }
+              }
+            );
+
+            connection.query(
+              `SELECT trans.zone1_Astatus, trans.zone2_Astatus, trans.zone3_Astatus, trans.zone4_Astatus, trans.zone5_Astatus,
+            trans.zone6_Astatus, trans.zone7_Astatus, trans.zone8_Astatus, trans.zone9_Astatus, trans.zone10_Astatus,
+            trans.zone11_Astatus, trans.zone12_Astatus, trans.zone13_Astatus, trans.zone14_Astatus, trans.zone15_Astatus,
+            trans.zone16_Astatus, trans.zone17_Astatus, trans.zone18_Astatus, trans.zone19_Astatus, trans.zone20_Astatus, 
+            trans.zone21_Astatus, trans.zone22_Astatus, trans.zone23_Astatus, trans.zone24_Astatus, trans.zone25_Astatus, 
+            trans.zone26_Astatus, trans.zone27_Astatus, trans.zone28_Astatus, trans.zone29_Astatus, trans.zone30_Astatus,
+            trans.zone31_Astatus, trans.zone32_Astatus FROM SiteDetail AS mst JOIN LatestData AS trans ON mst.SiteId = trans.SiteId WHERE mst.SiteId = '${SiteId}'`,
+              (err, zoneresult) => {
+                if (err) {
+                  console.log(err);
+                } else {
+                  if (zoneresult[0]) {
+                    for (var i = 0; i < 32; i++) {
+                      var zoneNum = i + 1;
+                      var zoneE = zoneresult[0][`zone${zoneNum}_e`];
+                      var zoneAStatusTimeValue =
+                        zoneresult[0][`zone${zoneNum}_Astatus`];
+                      var zoneAStatus = zoneAStatusTimeValue
+                        ? zoneAStatusTimeValue.split(",")[0]
+                        : null;
+
+                      if (zoneE == 1) {
+                        if (
+                          (zoneAStatus == null || zoneAStatus == 3) &&
+                          z[i] ==
+                            (zoneNum > 9 ? `${zoneNum}RA` : `0${zoneNum}RA`)
+                        ) {
+                          connection.query(
+                            `UPDATE LatestData SET zone${zoneNum}_Astatus = "1,${formattedDate},${moment(
+                              istDate
+                            ).format(
+                              "YYYY-MM-DD HH:mm:ss"
+                            )}" WHERE SiteId = '${SiteId}'`,
+                            (err, updateResult) => {
+                              if (err) {
+                                console.log(err);
+                              }
+                            }
+                          );
+                        } else if (
+                          (zoneAStatus == 1 || zoneAStatus == null) &&
+                          z[i] ==
+                            (zoneNum > 9 ? `${zoneNum}AA` : `0${zoneNum}AA`)
+                        ) {
+                          connection.query(
+                            `UPDATE LatestData SET zone${zoneNum}_Astatus = "2,${formattedDate},${moment(
+                              istDate
+                            ).format(
+                              "YYYY-MM-DD HH:mm:ss"
+                            )}" WHERE SiteId = '${SiteId}'`,
+                            (err, updateResult) => {
+                              if (err) {
+                                console.log(err);
+                              }
+                            }
+                          );
+                        }
+                      }
+                    }
                   }
                 }
               }
