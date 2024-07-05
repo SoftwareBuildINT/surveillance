@@ -428,6 +428,40 @@ app.post("/login", async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
+
+// Route to refresh the token
+app.post("/refresh-token", (req, res) => {
+  const { token } = req.body;
+
+  if (!token) {
+    return res.status(401).json({ error: "Token is required" });
+  }
+
+  jwt.verify(token, "secretkey", (err, decoded) => {
+    if (err) {
+      return res.status(401).json({ error: "Invalid token" });
+    }
+
+    // Generate a new token with the same payload but a new expiration time
+    const newToken = jwt.sign(
+      {
+        FirstName: decoded.FirstName,
+        LastName: decoded.LastName,
+        EmailId: decoded.EmailId,
+        role: decoded.role,
+        Id: decoded.Id,
+      },
+      "secretkey",
+      {
+        expiresIn: "1h", // Token expires in 1 hour
+      }
+    );
+
+    res.status(200).json({ token: newToken });
+  });
+});
+
+
 // Verify OTP and log in
 app.post("/verify", (req, res) => {
   const { EmailId, otp } = req.body;
