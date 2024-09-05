@@ -2203,7 +2203,7 @@ function alerts(data) {
 }
 
 
-app.post("/api/imax-raw-data", (req, res) => {
+app.post("/api/imax", (req, res) => {
   console.log(req);
   const { setOfInformation } = req.body;
   console.log(".\n.\n.\n.\n.\n.\n.\n.\n.\n.\n.\n.\n.");
