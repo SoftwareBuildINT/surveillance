@@ -2226,7 +2226,7 @@ app.post('/api/imax', async (req, res) => {
   const DID = data.DID;
   const TI = data.TI;
 
-  if (HB === '1') {
+  if (HB === '1' || HB === '0') {
     let output = '#1v,4, 67295,ATMNG 32IP Panel,GAM3.4A,' + DID + ',00001,';
   
     // Extract TI parts
