@@ -63,7 +63,6 @@ const verifyToken = (req, res, next) => {
 
     // Attach the decoded user information to the request object for later use
     req.user_data = decoded;
-    console.log(req.user_data);
     next();
   });
 };
@@ -85,18 +84,13 @@ app.get("/profile", verifyToken, (req, res) => {
   // Continue with your existing logic to fetch profile from the database
   const userId = req.user_data.Id;
 
-  console.log("User ID:", userId);
-
   const query = `SELECT Id, CONCAT(FirstName, ' ', LastName) AS fullname, role FROM login WHERE Id = ?;`;
-
-  console.log("Query:", query);
 
   connection.query(query, [userId], (err, result) => {
     if (err) {
       console.error("Error fetching profile:", err);
       res.status(500).json({ error: "Error fetching profile" });
     } else {
-      console.log("Result:", result);
       if (result.length > 0) {
         const profile = result[0];
         res.json(profile);
@@ -194,7 +188,6 @@ app.delete("/delete-user/:Id", verifyToken, (req, res) => {
   // }
 
   const Id = req.params.Id; // Retrieve siteId from URL parameters
-  console.log(Id);
 
   const sql = "DELETE FROM login WHERE Id = ?;"; // Use parameterized query
 
@@ -229,7 +222,6 @@ app.delete("/delete-site/:siteId", verifyToken, (req, res) => {
   }
 
   const siteId = req.params.siteId; // Retrieve siteId from URL parameters
-  console.log(siteId);
 
   // Define the SQL query to delete the site with the given ID
   const sql = "DELETE FROM SiteDetail WHERE SiteId = ?;"; // Use parameterized query
@@ -276,7 +268,6 @@ app.post("/update-status/:siteId/:status", verifyToken, (req, res) => {
   } else if (status == "2") {
     sql = "UPDATE SiteDetail SET Status = 1 WHERE SiteId = ?;";
   }
-  console.log(sql);
 
   // Execute the SQL query with the specified site ID
   connection.query(sql, [siteId], (err, results) => {
@@ -308,7 +299,6 @@ app.post("/updateUser", async (req, res) => {
   // Destructure request body to extract user data
   const { Id, FirstName, LastName, EmailId, role, Organization, ContactNo } =
     req.body;
-  console.log(req.body);
   connection.query(
     `UPDATE login SET FirstName = ?, LastName = ?, EmailId = ?, role = ?, Organization = ?, ContactNo = ? WHERE Id = ?`,
     [FirstName, LastName, EmailId, role, Organization, ContactNo, Id],
@@ -319,7 +309,6 @@ app.post("/updateUser", async (req, res) => {
         return res.status(500).json({ error: "Failed to update user." });
       } else {
         // Successful update response
-        console.log(`User with email ${EmailId} updated successfully.`);
         return res.status(200).json({ message: "User updated successfully." });
       }
     }
@@ -361,7 +350,6 @@ app.post("/addUser", async (req, res) => {
           return res.status(500).json({ error: "Failed to add user." });
         } else {
           // Successful insertion response
-          console.log(`User with email ${EmailId} registered successfully.`);
           return res
             .status(201)
             .json({ message: "User registered successfully." });
@@ -746,7 +734,6 @@ app.post("/addsite", verifyToken, (req, res) => {
 
       WHERE SiteId = ?`;
 
-      console.log(updateSQL);
 
       const updateValues = [
         AtmID,
@@ -777,7 +764,6 @@ app.post("/addsite", verifyToken, (req, res) => {
         SiteId,
       ];
 
-      console.log(updateValues);
 
       connection.query(updateSQL, updateValues, (updateErr, updateResults) => {
         if (updateErr) {
@@ -994,9 +980,6 @@ app.get("/incidentslive", (req, res) => {
   const incidentNo = req.query.incidentNo;
   const incident_name = req.query.incident_name;
   const atmId = incidentNo;
-  console.log(incident_name);
-  console.log(incidentNo);
-  console.log(atmId);
 
   const sqlQuery = `
   SELECT 
@@ -1045,8 +1028,6 @@ app.get("/incidentslive", (req, res) => {
 app.get("/incidentLiveCompleted", (req, res) => {
   const atmId = req.query.atmId;
   const incidentName = req.query.incidentName;
-  console.log(atmId);
-  console.log(incidentName);
 
   const query = `SELECT IncidentNo AS Incidentno, SiteId, AtmId, IncidentName AS alert, AlertType, SiteName, Client, SubClient, PanelTimeStamp, IstTimeStamp, Remark, alert_status AS action_status, close_time FROM serveillance.IncidentDetailc WHERE AtmId = ? AND IncidentName = ? order by 1 desc;`;
 
@@ -1092,7 +1073,6 @@ app.get("/panel-type/:id", (req, res) => {
 
   connection.query(query, [id], (err, results) => {
     if (err) {
-      console.log("Cannot get panel type");
       res.status(500).json({ error: "Internal Server Error" });
       return;
     }
@@ -1300,7 +1280,6 @@ app.get("/api/states", verifyToken, (req, res) => {
     sql = "SELECT StateId, StateName FROM State WHERE RegionId = ?";
     values = [stateId]; // Change RegionId to stateId
   }
-  console.log(values);
 
   connection.query(sql, values, (err, results) => {
     if (err) {
@@ -1419,7 +1398,6 @@ app.post(
             .status(500)
             .json({ success: false, message: "Internal server error" });
         } else {
-          console.log("Data updated in the database:", result);
           res.json({
             success: true,
             message: "Data updated in the database successfully",
@@ -1456,7 +1434,6 @@ app.post(
             .status(500)
             .json({ success: false, message: "Internal server error" });
         } else {
-          console.log("Data inserted into the database:", result);
           res.json({
             success: true,
             message:
@@ -1492,7 +1469,6 @@ app.post("/update-incident", verifyToken, (req, res) => {
       console.error("Error updating incident details:", err);
       res.status(500).send("Internal Server Error");
     } else {
-      console.log("Incident details updated successfully");
       res.status(200).send("Incident details updated successfully");
     }
   });
@@ -1795,7 +1771,6 @@ app.get("/get-panelType", (req, res) => {
 
 app.post("/logout", (req, res) => {
   // Clear the JWT token from the client-side storage
-  console.log("clearing token");
   res.clearCookie("token");
   res.setHeader("Authorization", "");
 
@@ -2084,14 +2059,12 @@ function alerts(data) {
       timeZone: "Asia/Kolkata",
     });
     var eventCode = values[26].slice(0, 3);
-    console.log(eventCode);
     try {
       const queryEventCode = `SELECT event_code, description, alerts_status, alert_check FROM event_codes WHERE event_code LIKE '${eventCode}%'`;
       connection.query(queryEventCode, (error, result) => {
         if (error) {
           console.log(error);
         } else {
-          console.log(result);
           if (
             result.length == 1 &&
             result[0]["alerts_status"] == 1 &&
