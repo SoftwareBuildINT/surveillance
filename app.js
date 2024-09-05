@@ -1897,8 +1897,6 @@ function test(data) {
                       (err, result) => {
                         if (err) {
                           console.log(err);
-                        } else {
-                          console.log(result);
                         }
                       }
                     );
@@ -1912,8 +1910,6 @@ function test(data) {
                       (err, result) => {
                         if (err) {
                           console.log(err);
-                        } else {
-                          console.log(result);
                         }
                       }
                     );
@@ -1944,8 +1940,6 @@ function test(data) {
                       (err, result) => {
                         if (err) {
                           console.log(err);
-                        } else {
-                          console.log(result);
                         }
                       }
                     );
@@ -1959,8 +1953,6 @@ function test(data) {
                       (err, result) => {
                         if (err) {
                           console.log(err);
-                        } else {
-                          console.log(result);
                         }
                       }
                     );
@@ -2116,8 +2108,6 @@ function alerts(data) {
                       (IncidentDetailError, IncidentDetailResult) => {
                         if (IncidentDetailError) {
                           console.log(IncidentDetailError);
-                        } else {
-                          console.log(IncidentDetailResult);
                         }
                       }
                     );
@@ -2155,8 +2145,6 @@ function alerts(data) {
                     (IncidentDetailError, IncidentDetailResult) => {
                       if (IncidentDetailError) {
                         console.log(IncidentDetailError);
-                      } else {
-                        console.log(IncidentDetailResult);
                       }
                     }
                   );
