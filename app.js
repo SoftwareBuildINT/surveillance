@@ -2203,8 +2203,7 @@ function alerts(data) {
 }
 
 
-app.post("/api/imax", async (req, res) => {
-  console.log(req);
+app.post('/api/imax', async (req, res) => {
   const { setOfInformation } = req.body;
   console.log(".\n.\n.\n.\n.\n.\n.\n.\n.\n.\n.\n.\n.");
   console.log(setOfInformation);
