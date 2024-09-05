@@ -2288,7 +2288,7 @@ app.post("/api/imax-raw-data", (req, res) => {
     output += '33XX!34XX!35XX!36XX!37XX!38XX!39XX!40XX!41XX!42XX!43XX!44XX!45XX!46XX!47XX!48XX!49XX!50XX!51XX!52XX!53XX!54XX!55XX!56XX!57XX!58XX!59XX!60XX!61XX!62XX!63XX!64XX,01FX!02FX!03FX!04OX!05FX!06FX!07OX!08FX!09FX!10FX,A,0,0,0,0,D7,';
 
     test(output);
-    console.log(output);
+    console.log("IMAX DATA", output);
   
   }
 
