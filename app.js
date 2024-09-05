@@ -2244,6 +2244,8 @@ function alerts(data) {
 
 app.post("/api/imax-raw-data", (req, res) => {
   const { setOfInformation } = req.body;
+  console.log(".\n.\n.\n.\n.\n.\n.\n.\n.\n.\n.\n.\n.")
+  console.log(setOfInformation);
 
   const parseInput = (setOfInformation) => {
     const data = {};
