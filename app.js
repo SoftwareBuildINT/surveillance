@@ -2289,7 +2289,7 @@ const server = net.createServer((socket) => {
   socket.on("data", (data) => {
     var str = data.toString();
     var cstr = str.split(",");
-    // console.log(`Received data from client ${data}`);
+    console.log(`Received data from client ${data}`);
     if (cstr[0] == "#1I") {
       try {
         alerts(str);
