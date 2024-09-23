@@ -12,6 +12,7 @@ const multer = require("multer");
 const path = require("path");
 const cors = require("cors");
 const bcrypt = require("bcrypt");
+const WebSocket = require('ws');
 
 // const mysql = require('mysql2/promise');
 const storage = multer.memoryStorage();
@@ -66,6 +67,47 @@ const verifyToken = (req, res, next) => {
     next();
   });
 };
+
+const wss = new WebSocket.Server({ noServer: true });
+let onPremSocket = null;
+
+// WebSocket server to handle messages from AWS to on-prem server
+wss.on('connection', (ws) => {
+  console.log('On-prem server connected');
+  onPremSocket = ws;
+
+  ws.on('message', (message) => {
+    console.log('Received from on-prem:', message);
+  });
+
+  ws.on('close', () => {
+    console.log('On-prem server disconnected');
+    onPremSocket = null;
+  });
+});
+
+app.get('/api/startStream/:AtmID', (req, res) => {
+  const { AtmID } = req.params;
+
+  const query = `SELECT AtmID, RouterIp FROM SiteDetail where AtmID = ?;`;
+
+  connection.query(query, [AtmID], (err, result) => {
+    if (err) {
+      console.error("Error fetching profile:", err);
+      res.status(500).json({ error: "Error fetching data" });
+    } else {
+      if (result.length > 0) {
+        if (onPremSocket) {
+          // Send message with camera ID to on-prem server
+          onPremSocket.send(JSON.stringify( result[0] ));
+          res.status(200).send('Message sent to on-prem server');
+        } else {
+          res.status(500).send('On-prem server not connected');
+        }
+      }
+    }
+  });
+});
 
 app.get("/profile", verifyToken, (req, res) => {
   // Check if the user has the required roles to perform this action
@@ -804,10 +846,10 @@ app.post("/addsite", verifyToken, (req, res) => {
         ${zones.map((_, i) => `zone${i + 1}_name`).join(", ")}, 
         ${zones.map((_, i) => `zone${i + 1}_alert_enable`).join(", ")}
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ${Array(
-      zones.length * 2
-    )
-      .fill("?")
-      .join(", ")})`;
+        zones.length * 2
+      )
+          .fill("?")
+          .join(", ")})`;
 
       const insertValues = [
         SiteId,
@@ -1854,41 +1896,27 @@ function test(data) {
                     connection.query(
                       `UPDATE LatestData SET macid = '${macid}', 
                   AtmID = '${AtmID}',
-                  zone1_status = '${z[0]}', zone2_status = '${
-                        z[1]
+                  zone1_status = '${z[0]}', zone2_status = '${z[1]
                       }', zone3_status = '${z[2]}', zone4_status = '${z[3]}', 
-                  zone5_status = '${z[4]}', zone6_status = '${
-                        z[5]
+                  zone5_status = '${z[4]}', zone6_status = '${z[5]
                       }', zone7_status = '${z[6]}', zone8_status = '${z[7]}', 
-                  zone9_status = '${z[8]}', zone10_status = '${
-                        z[9]
-                      }', zone11_status = '${z[10]}', zone12_status = '${
-                        z[11]
+                  zone9_status = '${z[8]}', zone10_status = '${z[9]
+                      }', zone11_status = '${z[10]}', zone12_status = '${z[11]
                       }', 
-                  zone13_status = '${z[12]}', zone14_status = '${
-                        z[13]
-                      }', zone15_status = '${z[14]}', zone16_status = '${
-                        z[15]
+                  zone13_status = '${z[12]}', zone14_status = '${z[13]
+                      }', zone15_status = '${z[14]}', zone16_status = '${z[15]
                       }', 
-                  zone17_status = '${z[16]}', zone18_status = '${
-                        z[17]
-                      }', zone19_status = '${z[18]}', zone20_status = '${
-                        z[19]
+                  zone17_status = '${z[16]}', zone18_status = '${z[17]
+                      }', zone19_status = '${z[18]}', zone20_status = '${z[19]
                       }', 
-                  zone21_status = '${z[20]}', zone22_status = '${
-                        z[21]
-                      }', zone23_status = '${z[22]}', zone24_status = '${
-                        z[23]
+                  zone21_status = '${z[20]}', zone22_status = '${z[21]
+                      }', zone23_status = '${z[22]}', zone24_status = '${z[23]
                       }', 
-                  zone25_status = '${z[24]}', zone26_status = '${
-                        z[25]
-                      }', zone27_status = '${z[26]}', zone28_status = '${
-                        z[27]
+                  zone25_status = '${z[24]}', zone26_status = '${z[25]
+                      }', zone27_status = '${z[26]}', zone28_status = '${z[27]
                       }', 
-                  zone29_status = '${z[28]}', zone30_status = '${
-                        z[29]
-                      }', zone31_status = '${z[30]}', zone32_status = '${
-                        z[31]
+                  zone29_status = '${z[28]}', zone30_status = '${z[29]
+                      }', zone31_status = '${z[30]}', zone32_status = '${z[31]
                       }', 
                   panel_evt_dt = '${formattedDate}', ist_evt_dt = '${moment(
                         istDate
@@ -1922,17 +1950,13 @@ function test(data) {
                   zone19_status, zone20_status, zone21_status, zone22_status, zone23_status, zone24_status, zone25_status, 
                   zone26_status, zone27_status, zone28_status, zone29_status, zone30_status, zone31_status, zone32_status, 
                   panel_evt_dt, ist_evt_dt) 
-                  VALUES ('${macid}', '${SiteId}', '${AtmID}', '${z[0]}', '${
-                        z[1]
+                  VALUES ('${macid}', '${SiteId}', '${AtmID}', '${z[0]}', '${z[1]
                       }', '${z[2]}', '${z[3]}', '${z[4]}', 
-                  '${z[5]}', '${z[6]}', '${z[7]}', '${z[8]}', '${z[9]}', '${
-                        z[10]
+                  '${z[5]}', '${z[6]}', '${z[7]}', '${z[8]}', '${z[9]}', '${z[10]
                       }', '${z[11]}', '${z[12]}', '${z[13]}', 
-                  '${z[14]}', '${z[15]}', '${z[16]}', '${z[17]}', '${
-                        z[18]
+                  '${z[14]}', '${z[15]}', '${z[16]}', '${z[17]}', '${z[18]
                       }', '${z[19]}', '${z[20]}', '${z[21]}', '${z[22]}', 
-                  '${z[23]}', '${z[24]}', '${z[25]}', '${z[26]}', '${
-                        z[27]
+                  '${z[23]}', '${z[24]}', '${z[25]}', '${z[26]}', '${z[27]
                       }', '${z[28]}', '${z[29]}', '${z[30]}', '${z[31]}', 
                   '${formattedDate}', '${moment(istDate).format(
                         "YYYY-MM-DD HH:mm:ss"
@@ -1987,7 +2011,7 @@ function test(data) {
                         if (
                           (zoneAStatus == null || zoneAStatus == 3) &&
                           z[i] ==
-                            (zoneNum > 9 ? `${zoneNum}RA` : `0${zoneNum}RA`)
+                          (zoneNum > 9 ? `${zoneNum}RA` : `0${zoneNum}RA`)
                         ) {
                           connection.query(
                             `UPDATE LatestData SET zone${zoneNum}_Astatus = "1,${formattedDate},${moment(
@@ -2004,7 +2028,7 @@ function test(data) {
                         } else if (
                           (zoneAStatus == 1 || zoneAStatus == null) &&
                           z[i] ==
-                            (zoneNum > 9 ? `${zoneNum}AA` : `0${zoneNum}AA`)
+                          (zoneNum > 9 ? `${zoneNum}AA` : `0${zoneNum}AA`)
                         ) {
                           connection.query(
                             `UPDATE LatestData SET zone${zoneNum}_Astatus = "2,${formattedDate},${moment(
@@ -2084,7 +2108,7 @@ function alerts(data) {
                   ) {
                     var IncidentName =
                       siteDetailsResult[0][
-                        `zone${parseInt(values[26].slice(-2))}_name`
+                      `zone${parseInt(values[26].slice(-2))}_name`
                       ] +
                       " " +
                       description;
@@ -2228,34 +2252,34 @@ app.post('/api/imax', async (req, res) => {
 
   if (HB === '1' || HB === '0') {
     let output = '#1v,4, 67295,ATMNG 32IP Panel,GAM3.4A,' + DID + ',00001,';
-  
+
     // Extract TI parts
     const TI1 = TI.substring(0, 6); // 172156
     const TI2 = TI.substring(6);    // 290824
-  
+
     // Append TI to output
     output += `${TI1},${TI2},`;
-  
+
     // Format IM by adding '-' after every 2 characters
     const formattedIM = IM.match(/.{1,2}/g).join('-');
     output += `${formattedIM},`;
-  
+
     // Process SU to generate RA/AA codes
     for (let i = 0; i < 32; i++) {
       const bit = SU[i];
       const code = bit === '1' ? `${(i + 1).toString().padStart(2, '0')}RA` : `${(i + 1).toString().padStart(2, '0')}AA`;
       output += `${code}!`;
     }
-  
+
     // Add fixed part of the string
     output += '33XX!34XX!35XX!36XX!37XX!38XX!39XX!40XX!41XX!42XX!43XX!44XX!45XX!46XX!47XX!48XX!49XX!50XX!51XX!52XX!53XX!54XX!55XX!56XX!57XX!58XX!59XX!60XX!61XX!62XX!63XX!64XX,01FX!02FX!03FX!04OX!05FX!06FX!07OX!08FX!09FX!10FX,A,0,0,0,0,D7,';
 
     test(output);
     console.log("IMAX DATA", output);
-  
+
   }
 
-  res.status(200).json({"Message": "Success"});
+  res.status(200).json({ "Message": "Success" });
 
 });
 
