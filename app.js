@@ -1161,6 +1161,38 @@ app.get("/site-list", verifyToken, (req, res) => {
   });
 });
 
+app.get("/site-list-sbi", (req, res) => {
+
+  const SiteId = req.query.SiteId;
+
+  // Use parameterized queries to prevent SQL injection
+  let sql = `SELECT * FROM serveillance.SiteDetail AS ss 
+	LEFT JOIN serveillance.Region AS re ON (ss.Region = re.RegionId) 
+	LEFT JOIN serveillance.State AS st ON(ss.State = st.StateId)
+    LEFT JOIN serveillance.City AS ci ON (ss.City = ci.CityId);`;
+  let values = [];
+
+  if (SiteId) {
+    sql = `SELECT * FROM serveillance.SiteDetail AS ss 
+    LEFT JOIN serveillance.Region AS re ON (ss.Region = re.RegionId) 
+    LEFT JOIN serveillance.State AS st ON(ss.State = st.StateId)
+    LEFT JOIN serveillance.City AS ci ON (ss.City = ci.CityId)
+    WHERE SiteId = ?`;
+
+    values = [SiteId];
+  }
+
+  connection.query(sql, values, (err, results) => {
+    if (err) {
+      console.error("Error executing MySQL query: " + err.stack);
+      res.status(500).json({ error: "Internal Server Error" });
+      return;
+    }
+
+    res.json(results);
+  });
+});
+
 app.get("/total-location", verifyToken, (req, res) => {
   const allowedRoles = ["Admin", "super admin", "User"];
 
