@@ -68,7 +68,7 @@ const verifyToken = (req, res, next) => {
   });
 };
 
-const wss = new WebSocket.Server({ noServer: true });
+const wss = new WebSocket.Server({ port: 8080 });
 let onPremSocket = null;
 
 // WebSocket server to handle messages from AWS to on-prem server
